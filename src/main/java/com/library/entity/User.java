@@ -1,10 +1,15 @@
 package com.library.entity;
 
+import java.util.Date;
+
 public class User {
     private int id;
     private String username;
     private String password;
     private int age;
+    private String sex;
+    private Date createTime;
+    private Date updateTime;
 
     public int getId() {
         return id;
@@ -46,6 +51,19 @@ public class User {
         this.sex = sex;
     }
 
-    private String sex;
+    public Date getCreateTime() {
+        return createTime;
+    }
 
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    public Date getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
+    }
 }

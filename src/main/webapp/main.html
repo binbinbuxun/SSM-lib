@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书管理系统 - 主页</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #007aff;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #ff3b30;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .book-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .book-table th, .book-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .book-table th {
+            background-color: #f5f5f7;
+            font-weight: 600;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            position: relative;
+            background-color: white;
+            margin: 100px auto;
+            padding: 20px;
+            width: 400px;
+            border-radius: 10px;
+        }
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <div class="header">
+        <h1>图书管理系统</h1>
+        <div class="user-info">
+            <span>欢迎您，<span id="username">用户</span></span>
+            <button class="btn btn-danger" onclick="logout()">退出登录</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="search-bar">
+            <input type="text" class="search-input" id="search-keyword" placeholder="请输入书名、作者、分类等关键词">
+            <button class="btn btn-primary" onclick="searchBooks()">搜索</button>
+            <button class="btn btn-primary" onclick="showAddModal()">添加图书</button>
+        </div>
+        <table class="book-table" id="book-table">
+            <thead>
+            <tr>
+                <th>书名</th>
+                <th>作者</th>
+                <th>出版社</th>
+                <th>分类</th>
+                <th>价格</th>
+                <th>库存</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="book-list">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 添加/编辑图书模态框 -->
+<div class="modal" id="book-modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2 id="modal-title">添加图书</h2>
+        <form id="book-form">
+            <div class="form-group">
+                <label for="book-name">书名</label>
+                <input type="text" id="book-name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="book-author">作者</label>
+                <input type="text" id="book-author" name="author" required>
+            </div>
+            <div class="form-group">
+                <label for="book-publisher">出版社</label>
+                <input type="text" id="book-publisher" name="publisher">
+            </div>
+            <div class="form-group">
+                <label for="book-category">分类</label>
+                <input type="text" id="book-category" name="category">
+            </div>
+            <div class="form-group">
+                <label for="book-price">价格</label>
+                <input type="number" id="book-price" name="price" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="book-stock">库存</label>
+                <input type="number" id="book-stock" name="stock" required>
+            </div>
+            <input type="hidden" id="book-id">
+            <button type="submit" class="btn btn-primary">保存</button>
+        </form>
+    </div>
+</div>
+<script>
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+        checkLogin();
+        loadBooks();
+    });
+
+    // 检查登录状态
+    function checkLogin() {
+        const username = localStorage.getItem('username');
+        if (!username) {
+            window.location.href = 'index.html';
+        } else {
+            document.getElementById('username').textContent = username;
+        }
+    }
+
+    // 退出登录
+    function logout() {
+        if (confirm('确定要退出登录吗？')) {
+            localStorage.removeItem('username');
+            window.location.href = 'index.html';
+        }
+    }
+
+    // 加载图书列表
+    function loadBooks() {
+        fetch('/book/list')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayBooks(data.data);
+                } else {
+                    alert('加载图书列表失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('加载图书列表失败');
+            });
+    }
+
+    // 显示图书列表
+    function displayBooks(books) {
+        const tbody = document.getElementById('book-list');
+        tbody.innerHTML = '';
+        books.forEach(book => {
+            tbody.innerHTML += `
+            <tr>
+                <td>${book.name}</td>
+                <td>${book.author}</td>
+                <td>${book.publisher || '-'}</td>
+                <td>${book.category || '-'}</td>
+                <td>￥${book.price.toFixed(2)}</td>
+                <td>${book.stock}</td>
+                <td class="action-buttons">
+                    <button class="btn btn-primary" onclick="editBook(${book.id})">编辑</button>
+                    <button class="btn btn-danger" onclick="deleteBook(${book.id})">删除</button>
+                </td>
+            </tr>
+        `;
+        });
+    }
+
+    // 搜索图书
+    function searchBooks() {
+        const keyword = document.getElementById('search-keyword').value.trim();
+        if (!keyword) {
+            loadBooks();
+            return;
+        }
+        fetch(`/book/search?keyword=${encodeURIComponent(keyword)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayBooks(data.data);
+                } else {
+                    alert('搜索失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('搜索失败');
+            });
+    }
+
+    // 显示添加图书模态框
+    function showAddModal() {
+        document.getElementById('modal-title').textContent = '添加图书';
+        document.getElementById('book-form').reset();
+        document.getElementById('book-id').value = '';
+        document.getElementById('book-modal').style.display = 'block';
+    }
+
+    // 编辑图书
+    function editBook(id) {
+        fetch(`/book/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const book = data.data;
+                    document.getElementById('modal-title').textContent = '编辑图书';
+                    document.getElementById('book-id').value = book.id;
+                    document.getElementById('book-name').value = book.name;
+                    document.getElementById('book-author').value = book.author;
+                    document.getElementById('book-publisher').value = book.publisher || '';
+                    document.getElementById('book-category').value = book.category || '';
+                    document.getElementById('book-price').value = book.price;
+                    document.getElementById('book-stock').value = book.stock;
+                    document.getElementById('book-modal').style.display = 'block';
+                } else {
+                    alert('获取图书信息失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('获取图书信息失败');
+            });
+    }
+
+    // 表单提交处理
+    document.getElementById('book-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const bookData = {
+            name: document.getElementById('book-name').value.trim(),
+            author: document.getElementById('book-author').value.trim(),
+            publisher: document.getElementById('book-publisher').value.trim(),
+            category: document.getElementById('book-category').value.trim(),
+            price: parseFloat(document.getElementById('book-price').value),
+            stock: parseInt(document.getElementById('book-stock').value)
+        };
+        const bookId = document.getElementById('book-id').value;
+        if (bookId) {
+            bookData.id = parseInt(bookId);
+        }
+        const url = bookId ? '/book/update' : '/book/add';
+        const method = bookId ? 'PUT' : 'POST';
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.msg);
+                if (data.success) {
+                    closeModal();
+                    loadBooks();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('操作失败');
+            });
+    });
+
+    // 删除图书
+    function deleteBook(id) {
+        if (confirm('确定要删除这本书吗？此操作不可恢复！')) {
+            fetch(`/book/${id}`, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.msg);
+                    if (data.success) {
+                        loadBooks();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('删除失败');
+                });
+        }
+    }
+
+    // 关闭模态框
+    function closeModal() {
+        document.getElementById('book-modal').style.display = 'none';
+    }
+</script>
+</body>
+</html>
+

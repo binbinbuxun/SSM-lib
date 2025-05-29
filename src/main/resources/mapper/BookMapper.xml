@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.library.dao.BookMapper">
+    <resultMap id="BookResultMap" type="com.library.entity.Book">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="author" column="author"/>
+        <result property="publisher" column="publisher"/>
+        <result property="category" column="category"/>
+        <result property="price" column="price"/>
+        <result property="stock" column="stock"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 添加图书 -->
+    <insert id="insertBook" parameterType="com.library.entity.Book">
+        INSERT INTO book (name, author, publisher, category, price, stock, create_time, update_time)
+        VALUES (#{name}, #{author}, #{publisher}, #{category}, #{price}, #{stock}, now(), now())
+    </insert>
+
+    <!-- 删除图书 -->
+    <delete id="deleteBook" parameterType="java.lang.Integer">
+        DELETE FROM book WHERE id = #{id}
+    </delete>
+
+    <!-- 更新图书信息 -->
+    <update id="updateBook" parameterType="com.library.entity.Book">
+        UPDATE book
+        SET name = #{name},
+            author = #{author},
+            publisher = #{publisher},
+            category = #{category},
+            price = #{price},
+            stock = #{stock},
+            update_time = now()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询图书 -->
+    <select id="getBookById" resultMap="BookResultMap">
+        SELECT * FROM book WHERE id = #{id}
+    </select>
+
+    <!-- 查询所有图书 -->
+    <select id="getAllBooks" resultMap="BookResultMap">
+        SELECT * FROM book ORDER BY create_time DESC
+    </select>
+
+    <!-- 搜索图书 -->
+    <select id="searchBooks" resultMap="BookResultMap">
+        SELECT * FROM book
+        WHERE name LIKE CONCAT('%', #{keyword}, '%')
+        OR author LIKE CONCAT('%', #{keyword}, '%')
+        OR publisher LIKE CONCAT('%', #{keyword}, '%')
+        OR category LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 更新库存 -->
+    <update id="updateStock">
+        UPDATE book SET stock = #{stock}, update_time = now()
+        WHERE id = #{id}
+    </update>
+</mapper>
