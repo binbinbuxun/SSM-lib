@@ -550,6 +550,16 @@
             });
     }
 
+    // 检查管理员权限
+    function checkAdminPermission() {
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        if (!user || user.role !== 'ADMIN') {
+            alert('您没有权限执行此操作');
+            return false;
+        }
+        return true;
+    }
+
     // 显示添加图书模态框
     function showAddModal() {
         if (!checkAdminPermission()) return;
@@ -684,3 +694,4 @@
 </script>
 </body>
 </html>
+
