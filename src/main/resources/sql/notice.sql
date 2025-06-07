@@ -1,0 +1,7 @@
+CREATE TABLE notice (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(100) NOT NULL,
+    content TEXT NOT NULL,
+    date VARCHAR(20) NOT NULL
+);
+

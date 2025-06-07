@@ -3,9 +3,11 @@
 <mapper namespace="com.library.dao.BookMapper">
     <resultMap id="BookResultMap" type="com.library.entity.Book">
         <id property="id" column="id"/>
+        <result property="bookNumber" column="book_number"/>
         <result property="name" column="name"/>
         <result property="author" column="author"/>
         <result property="publisher" column="publisher"/>
+        <result property="publishDate" column="publish_date"/>
         <result property="category" column="category"/>
         <result property="price" column="price"/>
         <result property="stock" column="stock"/>
@@ -15,8 +17,8 @@
 
     <!-- 添加图书 -->
     <insert id="insertBook" parameterType="com.library.entity.Book">
-        INSERT INTO book (name, author, publisher, category, price, stock, create_time, update_time)
-        VALUES (#{name}, #{author}, #{publisher}, #{category}, #{price}, #{stock}, now(), now())
+        INSERT INTO book (book_number, name, author, publisher, publish_date, category, price, stock, create_time, update_time)
+        VALUES (#{bookNumber}, #{name}, #{author}, #{publisher}, #{publishDate}, #{category}, #{price}, #{stock}, now(), now())
     </insert>
 
     <!-- 删除图书 -->
@@ -27,9 +29,11 @@
     <!-- 更新图书信息 -->
     <update id="updateBook" parameterType="com.library.entity.Book">
         UPDATE book
-        SET name = #{name},
+        SET book_number = #{bookNumber},
+            name = #{name},
             author = #{author},
             publisher = #{publisher},
+            publish_date = #{publishDate},
             category = #{category},
             price = #{price},
             stock = #{stock},
@@ -57,9 +61,43 @@
         ORDER BY create_time DESC
     </select>
 
+    <!-- 关键字+分类联合搜索 -->
+    <select id="searchBooksByKeywordAndCategory" resultMap="BookResultMap">
+        SELECT * FROM book
+        WHERE
+            (
+                #{keyword} IS NULL OR #{keyword} = ''
+                OR name LIKE CONCAT('%', #{keyword}, '%')
+                OR author LIKE CONCAT('%', #{keyword}, '%')
+                OR publisher LIKE CONCAT('%', #{keyword}, '%')
+                OR category LIKE CONCAT('%', #{keyword}, '%')
+            )
+            <if test="category != null and category != '' and category != '选择分类'">
+                AND category = #{category}
+            </if>
+        ORDER BY create_time DESC
+    </select>
+
     <!-- 更新库存 -->
     <update id="updateStock">
         UPDATE book SET stock = #{stock}, update_time = now()
         WHERE id = #{id}
     </update>
+
+    <!-- 分页查询图书 -->
+    <select id="getBooksByPage" resultMap="BookResultMap">
+        SELECT * FROM book
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 获取图书总数 -->
+    <select id="getTotalBooks" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM book
+    </select>
+
+    <!-- 查询某分类下最大的图书序号 -->
+    <select id="getMaxBookNumberByPrefix" resultType="java.lang.String">
+        SELECT MAX(book_number) FROM book WHERE book_number LIKE CONCAT(#{prefix}, '%')
+    </select>
 </mapper>

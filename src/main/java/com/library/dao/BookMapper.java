@@ -23,6 +23,18 @@ public interface BookMapper {
     // 根据条件搜索图书
     List<Book> searchBooks(@Param("keyword") String keyword);
 
+    // 关键字+分类联合搜索
+    List<Book> searchBooksByKeywordAndCategory(@Param("keyword") String keyword, @Param("category") String category);
+
     // 更新图书库存
     int updateStock(@Param("id") Integer id, @Param("stock") Integer stock);
+
+    // 分页查询图书
+    List<Book> getBooksByPage(@Param("offset") int offset, @Param("pageSize") int pageSize);
+
+    // 获取图书总数
+    int getTotalBooks();
+
+    // 查询某分类下最大的图书序号
+    String getMaxBookNumberByPrefix(@Param("prefix") String prefix);
 }

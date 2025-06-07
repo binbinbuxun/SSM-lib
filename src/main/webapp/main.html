@@ -8,16 +8,78 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background-color: #f0f2f5;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 220px;
+            background-color: #007aff;
+            color: white;
+            padding: 20px 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+            border-top-right-radius: 16px;
+            border-bottom-right-radius: 16px;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .sidebar h2 {
+            margin-top: 0;
+            font-size: 18px;
+            text-align: center;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            padding: 14px 30px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .sidebar ul li:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .sidebar ul li.active {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .sidebar .close-btn {
+            display: none;
+        }
+        .sidebar-mask {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.2);
+            z-index: 999;
+        }
+        .sidebar-mask.open {
+            display: block;
+        }
+        .sidebar-toggle-btn {
+            margin-right: 18px;
+            background: #007aff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 14px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
         .header {
             display: flex;
@@ -26,6 +88,51 @@
             margin-bottom: 30px;
             padding-bottom: 20px;
             border-bottom: 1px solid #eee;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .header-title {
+            margin: 0 0 0 16px;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            line-height: 1.2;
+            height: 38px;
+            display: flex;
+            align-items: center;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        @media (min-width: 700px) {
+            .container {
+                margin-left: 220px;
+            }
+            .sidebar-toggle-btn {
+                display: inline-block;
+            }
+            .sidebar {
+                position: fixed;
+                border-top-right-radius: 16px;
+                border-bottom-right-radius: 16px;
+            }
+            .sidebar-mask {
+                display: none !important;
+            }
+        }
+        .container {
+            flex: 1;
+            margin-left: 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-width: 0;
         }
         .search-bar {
             display: flex;
@@ -115,40 +222,103 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .pagination button {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .pagination button:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+        }
+        .pagination button.active {
+            background-color: #007aff;
+            color: white;
+            border-color: #007aff;
+        }
+        .pagination-info {
+            margin: 0 15px;
+            color: #666;
+        }
     </style>
 </head>
 
 <body>
-<div class="container">
-    <div class="header">
-        <h1>图书管理系统</h1>
-        <div class="user-info">
-            <span>欢迎您，<span id="username">用户</span></span>
-            <button class="btn btn-danger" onclick="logout()">退出登录</button>
-        </div>
+<div class="layout">
+    <div class="sidebar-mask" id="sidebar-mask" onclick="closeSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+        <h2>管理菜单</h2>
+        <ul>
+            <li class="admin-only" onclick="location.href='user.html'">用户管理</li>
+            <li class="active" onclick="location.href='main.html'">图书管理</li>
+            <li class="admin-only" onclick="location.href='notice.html'">公告管理</li>
+        </ul>
     </div>
-
-    <div class="content">
-        <div class="search-bar">
-            <input type="text" class="search-input" id="search-keyword" placeholder="请输入书名、作者、分类等关键词">
-            <button class="btn btn-primary" onclick="searchBooks()">搜索</button>
-            <button class="btn btn-primary" onclick="showAddModal()">添加图书</button>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <button class="sidebar-toggle-btn" onclick="openSidebar()">☰ 菜单</button>
+                <h1 class="header-title">图书管理</h1>
+            </div>
+            <div class="user-info">
+                <span>欢迎您，<span id="username">用户</span></span>
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
+            </div>
         </div>
-        <table class="book-table" id="book-table">
-            <thead>
-            <tr>
-                <th>书名</th>
-                <th>作者</th>
-                <th>出版社</th>
-                <th>分类</th>
-                <th>价格</th>
-                <th>库存</th>
-                <th>操作</th>
-            </tr>
-            </thead>
-            <tbody id="book-list">
-            </tbody>
-        </table>
+
+        <div class="content">
+            <div class="search-bar">
+                <input type="text" class="search-input" id="search-keyword" placeholder="请输入书名、作者、分类等关键词">
+                <select id="category-select" class="search-input" style="flex: 0.5" onchange="updateBookNumber()">
+                    <option value="">选择分类</option>
+                    <option value="CP">计算机</option>
+                    <option value="WX">文学</option>
+                    <option value="KH">科幻</option>
+                    <option value="KP">科普</option>
+                    <option value="LS">历史</option>
+                    <option value="JJ">经济</option>
+                </select>
+                <button class="btn btn-primary" onclick="searchBooks()">搜索</button>
+                <button class="btn btn-primary admin-only" onclick="showAddModal()">添加图书</button>
+            </div>
+            <table class="book-table" id="book-table">
+                <thead>
+                <tr>
+                    <!-- 表头 -->
+                    <th>图书序号</th>
+                    <th>书名</th>
+                    <th>作者</th>
+                    <th>出版社</th>
+                    <th>分类</th>
+                    <th>出版日期</th>
+                    <th>价格</th>
+                    <th>库存</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="book-list">
+                </tbody>
+            </table>
+            <!-- 添加分页控件 -->
+            <div class="pagination">
+                <button id="prevPage" onclick="changePage(-1)">上一页</button>
+                <span class="pagination-info">
+                    第 <span id="currentPage">1</span> 页，
+                    共 <span id="totalPages">1</span> 页
+                    （共 <span id="totalItems">0</span> 条）
+                </span>
+                <button id="nextPage" onclick="changePage(1)">下一页</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -182,83 +352,190 @@
                 <label for="book-stock">库存</label>
                 <input type="number" id="book-stock" name="stock" required>
             </div>
+            <div class="form-group">
+                <label for="book-number">图书序号</label>
+                <input type="text" id="book-number" name="number" readonly>
+            </div>
+            <div class="form-group">
+                <label for="book-publish-date">出版日期</label>
+                <input type="date" id="book-publish-date" name="publishDate">
+            </div>
             <input type="hidden" id="book-id">
             <button type="submit" class="btn btn-primary">保存</button>
         </form>
     </div>
 </div>
 <script>
-    // 页面加载完成后执行
-    document.addEventListener('DOMContentLoaded', function() {
-        checkLogin();
-        loadBooks();
-    });
+    let userRole = '';
+    let currentPage = 1;
+    const pageSize = 10;
+    let totalItems = 0;
 
-    // 检查登录状态
-    function checkLogin() {
-        const username = localStorage.getItem('username');
-        if (!username) {
+    // 页面加载时优先检查sessionStorage并初始化
+    window.onload = function() {
+        const userInfoStr = sessionStorage.getItem('user');
+        if (!userInfoStr) {
+            alert('请先登录');
             window.location.href = 'index.html';
-        } else {
-            document.getElementById('username').textContent = username;
+            return;
+        }
+        const userInfo = JSON.parse(userInfoStr);
+        userRole = userInfo.role;
+        document.getElementById('username').textContent = userInfo.username;
+        setupUIByRole();
+        loadBooks();
+    };
+
+    // 根据角色设置界面
+    function setupUIByRole() {
+        const addBtn = document.querySelector('.btn.btn-primary.admin-only');
+        const editBtns = document.querySelectorAll('.edit-btn');
+        const deleteBtns = document.querySelectorAll('.delete-btn');
+        const userManageLink = document.querySelector('li[onclick="location.href=\'user.html\'"]');
+        const noticeManageLink = document.querySelector('li[onclick="location.href=\'notice.html\'"]');
+        if (userRole !== 'ADMIN') {
+            if (addBtn) addBtn.style.display = 'none';
+            editBtns.forEach(btn => btn.style.display = 'none');
+            deleteBtns.forEach(btn => btn.style.display = 'none');
+            if (userManageLink) userManageLink.style.display = 'none';
+            if (noticeManageLink) noticeManageLink.style.display = 'none';
         }
     }
 
     // 退出登录
     function logout() {
         if (confirm('确定要退出登录吗？')) {
-            localStorage.removeItem('username');
+            sessionStorage.removeItem('user');
             window.location.href = 'index.html';
         }
     }
 
-    // 加载图书列表
-    function loadBooks() {
-        fetch('/book/list')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    displayBooks(data.data);
-                } else {
-                    alert('加载图书列表失败');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('加载图书列表失败');
-            });
+    // 加载图书列表（使用分页）
+    let retryCount = 0;
+
+    async function loadBooks() {
+        try {
+            const response = await fetch(`/book/page?pageNum=${currentPage}&pageSize=${pageSize}`);
+            const result = await response.json();
+
+            if (result.success) {
+                const books = result.data;
+                totalItems = result.total;
+                updatePaginationInfo();
+                displayBooks(books);
+            } else {
+                throw new Error("接口返回失败");
+            }
+        } catch (error) {
+            console.error('加载图书失败:', error);
+            if (retryCount < 1) {
+                retryCount++;
+                setTimeout(() => {
+                    alert('正在尝试重新加载...');
+                    loadBooks();
+                }, 1000); // 1秒后重试
+            } else {
+                alert('加载图书失败，请刷新页面重试');
+            }
+        }
+    }
+
+    // 更新分页信息
+    function updatePaginationInfo() {
+        const totalPages = Math.ceil(totalItems / pageSize);
+        document.getElementById('currentPage').textContent = currentPage;
+        document.getElementById('totalPages').textContent = totalPages;
+        document.getElementById('totalItems').textContent = totalItems;
+
+        // 更新按钮状态
+        document.getElementById('prevPage').disabled = currentPage <= 1;
+        document.getElementById('nextPage').disabled = currentPage >= totalPages;
+    }
+
+    // 切换页码
+    function changePage(delta) {
+        const totalPages = Math.ceil(totalItems / pageSize);
+        const newPage = currentPage + delta;
+
+        if (newPage >= 1 && newPage <= totalPages) {
+            currentPage = newPage;
+            loadBooks();
+        }
     }
 
     // 显示图书列表
     function displayBooks(books) {
         const tbody = document.getElementById('book-list');
-        tbody.innerHTML = '';
+        tbody.innerHTML = ''; // 清空旧内容
+
+        const fragment = document.createDocumentFragment();
+
         books.forEach(book => {
-            tbody.innerHTML += `
-            <tr>
-                <td>${book.name}</td>
-                <td>${book.author}</td>
-                <td>${book.publisher || '-'}</td>
-                <td>${book.category || '-'}</td>
-                <td>￥${book.price.toFixed(2)}</td>
-                <td>${book.stock}</td>
-                <td class="action-buttons">
+            let publishDate = book.publishDate ? new Date(book.publishDate).toISOString().split('T')[0] : '-';
+
+            const tr = document.createElement('tr');
+
+            tr.innerHTML = `
+            <td>${book.bookNumber || '-'}</td>
+            <td>${book.name}</td>
+            <td>${book.author}</td>
+            <td>${book.publisher || '-'}</td>
+            <td>${book.category || '-'}</td>
+            <td>${publishDate}</td>
+            <td>￥${book.price.toFixed(2)}</td>
+            <td>${book.stock}</td>
+            <td class="action-buttons">
+                ${userRole === 'ADMIN' ? `
                     <button class="btn btn-primary" onclick="editBook(${book.id})">编辑</button>
                     <button class="btn btn-danger" onclick="deleteBook(${book.id})">删除</button>
-                </td>
-            </tr>
+                ` : ''}
+            </td>
         `;
+
+            fragment.appendChild(tr);
         });
+
+        tbody.appendChild(fragment);
     }
 
-    // 搜索图书
+
+    // 分类选择联动表单
+    document.getElementById('category-select').addEventListener('change', function() {
+        document.getElementById('book-category').value = this.options[this.selectedIndex].text;
+        fetchAndShowNextBookNumber();
+    });
+
+    // 获取下一个可用图书序号并显示
+    async function fetchAndShowNextBookNumber() {
+        // 获取当前分类（优先下拉框，其次输入框）
+        let category = document.getElementById('category-select').value;
+        if (!category) {
+            category = document.getElementById('book-category').value;
+        }
+        // 若无分类，默认CP
+        if (!category) category = 'CP';
+        try {
+            const resp = await fetch(`/book/nextNumber?category=${encodeURIComponent(category)}`);
+            const data = await resp.json();
+            if (data.success) {
+                document.getElementById('book-number').value = data.data;
+            } else {
+                document.getElementById('book-number').value = '';
+            }
+        } catch {
+            document.getElementById('book-number').value = '';
+        }
+    }
+
     function searchBooks() {
         const keyword = document.getElementById('search-keyword').value.trim();
-        if (!keyword) {
-            loadBooks();
-            return;
+        const categorySelect = document.getElementById('category-select');
+        const category = categorySelect.options[categorySelect.selectedIndex].text;
+        let url = '/book/search?keyword=' + encodeURIComponent(keyword);
+        if (category && category !== '选择分类') {
+            url += '&category=' + encodeURIComponent(category);
         }
-        fetch(`/book/search?keyword=${encodeURIComponent(keyword)}`)
+        fetch(url)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -275,11 +552,18 @@
 
     // 显示添加图书模态框
     function showAddModal() {
+        if (!checkAdminPermission()) return;
         document.getElementById('modal-title').textContent = '添加图书';
         document.getElementById('book-form').reset();
         document.getElementById('book-id').value = '';
         document.getElementById('book-modal').style.display = 'block';
+        fetchAndShowNextBookNumber();
     }
+
+    // 分类输入框失去焦点时也刷新序号（防止手动输入分类）
+    document.getElementById('book-category').addEventListener('blur', function() {
+        fetchAndShowNextBookNumber();
+    });
 
     // 编辑图书
     function editBook(id) {
@@ -296,6 +580,14 @@
                     document.getElementById('book-category').value = book.category || '';
                     document.getElementById('book-price').value = book.price;
                     document.getElementById('book-stock').value = book.stock;
+                    document.getElementById('book-number').value = book.bookNumber || '';
+                    if (book.publishDate) {
+                        const date = new Date(book.publishDate);
+                        const formattedDate = date.toISOString().split('T')[0];
+                        document.getElementById('book-publish-date').value = formattedDate;
+                    } else {
+                        document.getElementById('book-publish-date').value = '';
+                    }
                     document.getElementById('book-modal').style.display = 'block';
                 } else {
                     alert('获取图书信息失败');
@@ -311,9 +603,11 @@
     document.getElementById('book-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const bookData = {
+            bookNumber: document.getElementById('book-number').value.trim(),
             name: document.getElementById('book-name').value.trim(),
             author: document.getElementById('book-author').value.trim(),
             publisher: document.getElementById('book-publisher').value.trim(),
+            publishDate: document.getElementById('book-publish-date').value || null,
             category: document.getElementById('book-category').value.trim(),
             price: parseFloat(document.getElementById('book-price').value),
             stock: parseInt(document.getElementById('book-stock').value)
@@ -345,10 +639,11 @@
 
     // 删除图书
     function deleteBook(id) {
+        if (!checkAdminPermission()) return;
         if (confirm('确定要删除这本书吗？此操作不可恢复！')) {
             fetch(`/book/${id}`, { method: 'DELETE' })
                 .then(response => response.json())
-                .then(data => {
+                .then((data) => {
                     alert(data.msg);
                     if (data.success) {
                         loadBooks();
@@ -365,7 +660,27 @@
     function closeModal() {
         document.getElementById('book-modal').style.display = 'none';
     }
+
+    // 侧边栏控制
+    function openSidebar() {
+        document.getElementById('sidebar').classList.add('open');
+        document.getElementById('sidebar-mask').classList.add('open');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-mask').classList.remove('open');
+    }
+    // 点击除侧边栏外区域关闭侧边栏（大屏小屏都生效）
+    document.getElementById('sidebar-mask').addEventListener('click', closeSidebar);
+    document.addEventListener('click', function(e) {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarMask = document.getElementById('sidebar-mask');
+        if (sidebar.classList.contains('open')) {
+            if (!sidebar.contains(e.target) && !e.target.classList.contains('sidebar-toggle-btn')) {
+                closeSidebar();
+            }
+        }
+    });
 </script>
 </body>
 </html>
-

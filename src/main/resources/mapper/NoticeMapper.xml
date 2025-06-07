@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.library.dao.NoticeMapper">
+    <select id="getAll" resultType="com.library.entity.Notice">
+        SELECT * FROM notice ORDER BY date DESC
+    </select>
+    <insert id="insert" parameterType="com.library.entity.Notice">
+        INSERT INTO notice(title, content, date) VALUES(#{title}, #{content}, #{date})
+    </insert>
+    <update id="update" parameterType="com.library.entity.Notice">
+        UPDATE notice SET title=#{title}, content=#{content}, date=#{date} WHERE id=#{id}
+    </update>
+    <delete id="deleteById" parameterType="int">
+        DELETE FROM notice WHERE id=#{id}
+    </delete>
+    <select id="getById" parameterType="int" resultType="com.library.entity.Notice">
+        SELECT * FROM notice WHERE id=#{id}
+    </select>
+</mapper>

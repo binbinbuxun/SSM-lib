@@ -4,9 +4,11 @@ import java.util.Date;
 
 public class Book {
     private Integer id;
+    private String bookNumber;    // 图书序号
     private String name;
     private String author;
     private String publisher;
+    private Date publishDate;     // 出版日期
     private String category;
     private Double price;
     private Integer stock;
@@ -20,6 +22,14 @@ public class Book {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public String getBookNumber() {
+        return bookNumber;
+    }
+
+    public void setBookNumber(String bookNumber) {
+        this.bookNumber = bookNumber;
     }
 
     public String getName() {
@@ -44,6 +54,14 @@ public class Book {
 
     public void setPublisher(String publisher) {
         this.publisher = publisher;
+    }
+
+    public Date getPublishDate() {
+        return publishDate;
+    }
+
+    public void setPublishDate(Date publishDate) {
+        this.publishDate = publishDate;
     }
 
     public String getCategory() {

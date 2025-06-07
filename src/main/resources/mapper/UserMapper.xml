@@ -1,30 +1,61 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.library.dao.UserMapper">
-    <resultMap id="UserResultMap" type="com.library.entity.User">
+    <resultMap id="userMap" type="com.library.entity.User">
         <id property="id" column="id"/>
         <result property="username" column="username"/>
         <result property="password" column="password"/>
         <result property="age" column="age"/>
-        <result property="sex" column="sex"/>
+        <result property="gender" column="gender"/>
+        <result property="status" column="status"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
     </resultMap>
 
-    <select id="selectByUsername" resultMap="UserResultMap">
+    <select id="getAllUsers" resultMap="userMap">
+        SELECT * FROM user ORDER BY id
+    </select>
+
+    <select id="getUserById" resultMap="userMap">
+        SELECT * FROM user WHERE id = #{id}
+    </select>
+
+    <update id="updateUser">
+        UPDATE user
+        SET username = #{username},
+            password = #{password},
+            age = #{age},
+            gender = #{gender},
+            status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteUser">
+        DELETE FROM user WHERE id = #{id}
+    </delete>
+
+    <update id="updateUserStatus">
+        UPDATE user
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 添加登录和注册相关SQL -->
+    <select id="getUserByUsername" resultMap="userMap">
         SELECT * FROM user WHERE username = #{username}
     </select>
 
-    <insert id="insertUser" parameterType="com.library.entity.User">
-        INSERT INTO user (username, password, age, sex, create_time, update_time)
-        VALUES (#{username}, #{password}, #{age}, #{sex}, #{createTime}, #{updateTime})
+    <insert id="insertUser">
+        INSERT INTO user (username, password, age, gender, status)
+        VALUES (#{username}, #{password}, #{age}, #{gender}, 1)
     </insert>
 
-    <select id="login" resultMap="UserResultMap">
-        SELECT * FROM user WHERE username = #{username} AND password = #{password}
-    </select>
-
-    <select id="checkUsername" resultType="java.lang.Integer">
-        SELECT COUNT(*) FROM user WHERE username = #{username}
+    <select id="login" resultMap="userMap">
+        SELECT * FROM user
+        WHERE username = #{username}
+        AND password = #{password}
+        AND status = 1
     </select>
 </mapper>

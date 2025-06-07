@@ -22,6 +22,18 @@ public interface BookService {
     // 搜索图书
     List<Book> searchBooks(String keyword);
 
+    // 支持关键字和分类联合搜索
+    List<Book> searchBooks(String keyword, String category);
+
     // 更新库存
     boolean updateStock(Integer id, Integer stock);
+
+    // 分页查询图书
+    List<Book> getBooksByPage(Integer pageNum, Integer pageSize);
+
+    // 获取图书总数
+    int getTotalBooks();
+
+    // 获取下一个可用的图书序号
+    String getNextBookNumber(String category);
 }

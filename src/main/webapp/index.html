@@ -133,7 +133,7 @@
 <body>
 <div class="background-gradient"></div>
 <div class="auth-container">
-    <h2 id="auth-title">登录</h2>
+    <h2 id="auth-title">图书管理系统</h2>
     <form id="login-form" class="auth-form active">
         <div class="form-group">
             <label for="login-username">用户名</label>
@@ -176,10 +176,9 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // 存储用户信息
-                localStorage.setItem('username', username);
-                alert('登录成功！');
-                // 跳转到主页
+                const userInfo = { username: username, role: data.role };
+                sessionStorage.setItem('user', JSON.stringify(userInfo));
+                // 移除 alert 并使用单次跳转
                 window.location.href = 'main.html';
             } else {
                 alert(data.msg || '登录失败，请重试');
@@ -193,4 +192,3 @@
 </script>
 </body>
 </html>
-

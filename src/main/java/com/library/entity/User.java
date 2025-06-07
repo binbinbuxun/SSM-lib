@@ -3,19 +3,22 @@ package com.library.entity;
 import java.util.Date;
 
 public class User {
-    private int id;
+    private Integer id;
     private String username;
     private String password;
-    private int age;
-    private String sex;
+    private Integer age;
+    private String gender;
+    private Integer status;  // 0-禁用，1-启用
+    private String role;  // ADMIN-管理员，USER-普通用户
     private Date createTime;
     private Date updateTime;
 
-    public int getId() {
+    // Getters and Setters
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -35,20 +38,36 @@ public class User {
         this.password = password;
     }
 
-    public int getAge() {
+    public Integer getAge() {
         return age;
     }
 
-    public void setAge(int age) {
+    public void setAge(Integer age) {
         this.age = age;
     }
 
-    public String getSex() {
-        return sex;
+    public String getGender() {
+        return gender;
     }
 
-    public void setSex(String sex) {
-        this.sex = sex;
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public Date getCreateTime() {

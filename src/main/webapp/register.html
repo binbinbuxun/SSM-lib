@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>注册 - 类似苹果风格</title>
+    <title>注册</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
@@ -146,8 +146,8 @@
             <span class="validation-feedback"></span>
         </div>
         <div class="form-group">
-            <label for="register-sex">性别</label>
-            <select id="register-sex" name="sex" required>
+            <label for="register-gender">性别</label>
+            <select id="register-gender" name="gender" required>
                 <option value="">请选择性别</option>
                 <option value="男">男</option>
                 <option value="女">女</option>
@@ -168,7 +168,7 @@
         const username = document.getElementById('register-username').value.trim();
         const password = document.getElementById('register-password').value;
         const age = document.getElementById('register-age').value;
-        const sex = document.getElementById('register-sex').value;
+        const gender = document.getElementById('register-gender').value;
 
         // 简单前端校验
         let valid = true;
@@ -187,7 +187,7 @@
             feedbacks[2].textContent = '请输入有效年龄';
             valid = false;
         }
-        if (!sex) {
+        if (!gender) {
             feedbacks[3].textContent = '请选择性别';
             valid = false;
         }
@@ -197,19 +197,27 @@
         fetch('/user/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, age, sex })
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert('注册成功！请前往登录');
-                    window.location.href = 'index.html';
-                } else {
-                    feedbacks[0].textContent = data.msg || '注册失败';
-                }
+            body: JSON.stringify({
+                username,
+                password,
+                age: parseInt(age),
+                gender
             })
-            .catch(() => {
-                feedbacks[0].textContent = '网络错误，请稍后重试';
-            });
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('注册成功！请返回登录');
+                window.location.href = 'index.html';
+            } else {
+                alert(data.msg || '注册失败，请重试');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('注册失败，请重试');
+        });
     });
 </script>
+</body>
+</html>

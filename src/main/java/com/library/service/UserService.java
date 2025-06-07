@@ -1,21 +1,21 @@
 package com.library.service;
 
 import com.library.entity.User;
+import java.util.List;
 
 public interface UserService {
-    /**
-     * 用户注册
-     * @param user 用户信息
-     * @return 注册是否成功
-     */
-    boolean register(User user);
+    List<User> getAllUsers();
 
-    /**
-     * 用户登录
-     * @param username 用户名
-     * @param password 密码
-     * @return 登录成功返回用户信息，失败返回null
-     */
+    User getUserById(Integer id);
+
+    boolean updateUser(User user);
+
+    boolean deleteUser(Integer id);
+
+    boolean updateUserStatus(Integer id, Integer status);
+
+    // 添加登录和注册相关方法
     User login(String username, String password);
-}
 
+    boolean register(User user);
+}
