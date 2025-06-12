@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书管理系统 - 个人信息</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #007aff;
+            color: white;
+            padding: 20px 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+            border-top-right-radius: 16px;
+            border-bottom-right-radius: 16px;
+            overflow: hidden;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .sidebar h2 {
+            margin-top: 0;
+            font-size: 18px;
+            text-align: center;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            padding: 14px 30px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .sidebar ul li:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .sidebar ul li.active {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .sidebar .close-btn {
+            display: none;
+        }
+        .sidebar-mask {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.2);
+            z-index: 999;
+        }
+        .sidebar-mask.open {
+            display: block;
+        }
+        .sidebar-toggle-btn {
+            margin-right: 18px;
+            background: #007aff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 14px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .container {
+            flex: 1;
+            margin-left: 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-width: 0;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .header-title {
+            margin: 0 0 0 16px;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            line-height: 1.2;
+            height: 38px;
+            display: flex;
+            align-items: center;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .card-title {
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #007aff;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background-color: #007aff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        /* 管理菜单项默认隐藏 */
+        .admin-only {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <div class="sidebar-mask" id="sidebar-mask" onclick="closeSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+        <h2>功能菜单</h2>
+        <ul>
+            <li onclick="location.href='main.html'">图书列表</li>
+            <li onclick="location.href='borrow.html'">我的借阅</li>
+            <li class="admin-only" onclick="location.href='borrow-manage.html'">借阅管理</li>
+            <li class="admin-only" onclick="location.href='user.html'">用户管理</li>
+            <li class="admin-only" onclick="location.href='notice.html'">公告管理</li>
+            <li class="active" onclick="location.href='profile.html'">个人信息</li>
+        </ul>
+    </div>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <button class="sidebar-toggle-btn" onclick="openSidebar()">☰ 菜单</button>
+                <h1 class="header-title">个人信息</h1>
+            </div>
+            <div class="user-info">
+                <span>欢迎您，<span id="username">用户</span></span>
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="content">
+            <div class="alert alert-success" id="success-alert"></div>
+            <div class="alert alert-danger" id="error-alert"></div>
+            <div class="card">
+                <h3 class="card-title">基本信息</h3>
+                <form id="profile-form">
+                    <div class="form-group">
+                        <label for="profile-username">用户名</label>
+                        <input type="text" id="profile-username" name="username" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="age">年龄</label>
+                        <input type="number" id="age" name="age">
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">性别</label>
+                        <select id="gender" name="gender">
+                            <option value="">请选择性别</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">保存修改</button>
+                </form>
+            </div>
+            <div class="card">
+                <h3 class="card-title">修改密码</h3>
+                <form id="password-form">
+                    <div class="form-group">
+                        <label for="old-password">旧密码</label>
+                        <input type="password" id="old-password" name="oldPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-password">新密码</label>
+                        <input type="password" id="new-password" name="newPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-password">确认新密码</label>
+                        <input type="password" id="confirm-password" name="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">修改密码</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // 检查登录状态
+    window.onload = function() {
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        if (!user) {
+            window.location.href = 'index.html';
+            return;
+        }
+        document.getElementById('username').innerText = user.username;
+        document.getElementById('profile-username').value = user.username;
+        // 根据用户角色显示/隐藏管理菜单
+        if (user.role === 'ADMIN') {
+            const adminOnlyElements = document.getElementsByClassName('admin-only');
+            for (let element of adminOnlyElements) {
+                element.style.display = 'block';
+            }
+        }
+        loadProfile();
+    };
+    // 加载个人信息
+    function loadProfile() {
+        fetch('/user/profile')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const user = data.data;
+                    document.getElementById('profile-username').value = user.username;
+                    document.getElementById('age').value = user.age || '';
+                    document.getElementById('gender').value = user.gender || '';
+                } else {
+                    showError(data.msg);
+                }
+            })
+            .catch(error => {
+                showError('加载个人信息失败');
+            });
+    }
+    // 更新个人信息
+    document.getElementById('profile-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        const formData = {
+            id: user.id,
+            username: user.username,
+            age: document.getElementById('age').value,
+            gender: document.getElementById('gender').value,
+            role: user.role
+        };
+        fetch('/user/profile', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('个人信息更新成功');
+                // 更新session中的用户信息
+                sessionStorage.setItem('user', JSON.stringify({ ...user, age: formData.age, gender: formData.gender }));
+            } else {
+                showError(data.msg);
+            }
+        })
+        .catch(error => {
+            showError('更新个人信息失败');
+        });
+    });
+    // 修改密码
+    document.getElementById('password-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        if (newPassword !== confirmPassword) {
+            showError('两次输入的密码不一致');
+            return;
+        }
+        const formData = {
+            oldPassword: document.getElementById('old-password').value,
+            newPassword: newPassword
+        };
+        fetch('/user/password', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('密码修改成功');
+                document.getElementById('password-form').reset();
+            } else {
+                showError(data.msg);
+            }
+        })
+        .catch(error => {
+            showError('修改密码失败');
+        });
+    });
+    // 显示成功消息
+    function showSuccess(message) {
+        const alert = document.getElementById('success-alert');
+        alert.textContent = message;
+        alert.style.display = 'block';
+        setTimeout(() => {
+            alert.style.display = 'none';
+        }, 3000);
+    }
+    // 显示错误消息
+    function showError(message) {
+        const alert = document.getElementById('error-alert');
+        alert.textContent = message;
+        alert.style.display = 'block';
+        setTimeout(() => {
+            alert.style.display = 'none';
+        }, 3000);
+    }
+    // 侧边栏控制
+    function openSidebar() {
+        document.getElementById('sidebar').classList.add('open');
+        document.getElementById('sidebar-mask').classList.add('open');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-mask').classList.remove('open');
+    }
+    // 点击除侧边栏外区域关闭侧边栏（大屏小屏都生效）
+    document.getElementById('sidebar-mask').addEventListener('click', closeSidebar);
+    document.addEventListener('click', function(e) {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarMask = document.getElementById('sidebar-mask');
+        if (sidebar.classList.contains('open')) {
+            if (!sidebar.contains(e.target) && !e.target.classList.contains('sidebar-toggle-btn')) {
+                closeSidebar();
+            }
+        }
+    });
+    // 退出登录
+    function logout() {
+        sessionStorage.removeItem('user');
+        window.location.href = 'index.html';
+    }
+</script>
+</body>
+</html>

@@ -95,4 +95,89 @@ public class UserController {
         result.put("msg", success ? "注册成功" : "注册失败，用户名可能已存在");
         return result;
     }
+
+    @GetMapping("/profile")
+    public Map<String, Object> getProfile(HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        Object userObj = session.getAttribute("user");
+        if (userObj == null) {
+            result.put("success", false);
+            result.put("msg", "请先登录");
+            return result;
+        }
+        User user = (User) userObj;
+        result.put("success", true);
+        result.put("data", user);
+        return result;
+    }
+
+    @PutMapping("/profile")
+    public Map<String, Object> updateProfile(@RequestBody User user, HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        Object userObj = session.getAttribute("user");
+        if (userObj == null) {
+            result.put("success", false);
+            result.put("msg", "请先登录");
+            return result;
+        }
+        User currentUser = (User) userObj;
+        
+        // 确保只能修改自己的信息
+        if (!currentUser.getId().equals(user.getId())) {
+            result.put("success", false);
+            result.put("msg", "无权修改其他用户信息");
+            return result;
+        }
+        
+        // 不允许修改用户名和角色
+        user.setUsername(currentUser.getUsername());
+        user.setRole(currentUser.getRole());
+        
+        boolean success = userService.updateUser(user);
+        if (success) {
+            // 更新session中的用户信息
+            session.setAttribute("user", user);
+        }
+        result.put("success", success);
+        result.put("msg", success ? "更新成功" : "更新失败");
+        return result;
+    }
+
+    @PutMapping("/password")
+    public Map<String, Object> updatePassword(@RequestBody Map<String, String> params, HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        Object userObj = session.getAttribute("user");
+        if (userObj == null) {
+            result.put("success", false);
+            result.put("msg", "请先登录");
+            return result;
+        }
+        User currentUser = (User) userObj;
+        
+        String oldPassword = params.get("oldPassword");
+        String newPassword = params.get("newPassword");
+        
+        if (oldPassword == null || newPassword == null) {
+            result.put("success", false);
+            result.put("msg", "参数不完整");
+            return result;
+        }
+        
+        // 验证旧密码
+        if (!currentUser.getPassword().equals(oldPassword)) {
+            result.put("success", false);
+            result.put("msg", "旧密码错误");
+            return result;
+        }
+        
+        // 更新密码
+        currentUser.setPassword(newPassword);
+        boolean success = userService.updateUser(currentUser);
+        if (success) {
+            session.setAttribute("user", currentUser);
+        }
+        result.put("success", success);
+        result.put("msg", success ? "密码修改成功" : "密码修改失败");
+        return result;
+    }
 }
