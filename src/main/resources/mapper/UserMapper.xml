@@ -8,6 +8,7 @@
         <result property="age" column="age"/>
         <result property="gender" column="gender"/>
         <result property="status" column="status"/>
+        <result property="role" column="role"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
     </resultMap>
@@ -27,6 +28,7 @@
             age = #{age},
             gender = #{gender},
             status = #{status},
+            role = #{role},
             update_time = NOW()
         WHERE id = #{id}
     </update>
@@ -48,8 +50,8 @@
     </select>
 
     <insert id="insertUser">
-        INSERT INTO user (username, password, age, gender, status)
-        VALUES (#{username}, #{password}, #{age}, #{gender}, 1)
+        INSERT INTO user (username, password, age, gender, status, role)
+        VALUES (#{username}, #{password}, #{age}, #{gender}, 1, #{role})
     </insert>
 
     <select id="login" resultMap="userMap">

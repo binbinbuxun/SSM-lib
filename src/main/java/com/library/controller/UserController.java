@@ -17,6 +17,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @RequireAdmin
     @GetMapping("/list")
     public Map<String, Object> getAllUsers() {
         Map<String, Object> result = new HashMap<>();
@@ -27,6 +28,7 @@ public class UserController {
         return result;
     }
 
+    @RequireAdmin
     @GetMapping("/{id}")
     public Map<String, Object> getUser(@PathVariable Integer id) {
         Map<String, Object> result = new HashMap<>();
@@ -37,6 +39,7 @@ public class UserController {
         return result;
     }
 
+    @RequireAdmin
     @PutMapping("/update")
     public Map<String, Object> updateUser(@RequestBody User user) {
         Map<String, Object> result = new HashMap<>();
@@ -46,6 +49,7 @@ public class UserController {
         return result;
     }
 
+    @RequireAdmin
     @DeleteMapping("/{id}")
     public Map<String, Object> deleteUser(@PathVariable Integer id) {
         Map<String, Object> result = new HashMap<>();
@@ -55,6 +59,7 @@ public class UserController {
         return result;
     }
 
+    @RequireAdmin
     @PutMapping("/{id}/status")
     public Map<String, Object> updateUserStatus(@PathVariable Integer id, @RequestParam Integer status) {
         Map<String, Object> result = new HashMap<>();
@@ -72,6 +77,7 @@ public class UserController {
         if (loginUser != null) {
             session.setAttribute("user", loginUser);
             result.put("success", true);
+            result.put("data", loginUser);
             result.put("role", loginUser.getRole());
             result.put("message", "登录成功");
         } else {
@@ -89,6 +95,4 @@ public class UserController {
         result.put("msg", success ? "注册成功" : "注册失败，用户名可能已存在");
         return result;
     }
-
-
 }

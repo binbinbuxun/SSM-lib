@@ -176,9 +176,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                const userInfo = { username: username, role: data.role };
-                sessionStorage.setItem('user', JSON.stringify(userInfo));
-                // 移除 alert 并使用单次跳转
+                sessionStorage.setItem('user', JSON.stringify(data.data));
                 window.location.href = 'main.html';
             } else {
                 alert(data.msg || '登录失败，请重试');

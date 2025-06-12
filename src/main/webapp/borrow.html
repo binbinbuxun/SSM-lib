@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书管理系统 - 我的借阅</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #007aff;
+            color: white;
+            padding: 20px 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+            border-top-right-radius: 16px;
+            border-bottom-right-radius: 16px;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .sidebar h2 {
+            margin-top: 0;
+            font-size: 18px;
+            text-align: center;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            padding: 14px 30px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .sidebar ul li:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .sidebar ul li.active {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .container {
+            flex: 1;
+            margin-left: 0;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-width: 0;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .borrow-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .borrow-table th, .borrow-table td {
+            border: 1px solid #eee;
+            padding: 10px;
+            text-align: left;
+        }
+        .borrow-table th {
+            background: #f5f6fa;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #007aff;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #ff3b30;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-borrowing {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+        .status-returned {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status-overdue {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .sidebar-toggle-btn {
+            margin-right: 18px;
+            background: #007aff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 14px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .header-title {
+            margin: 0 0 0 16px;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            line-height: 1.2;
+        }
+        .sidebar-mask {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.2);
+            z-index: 999;
+        }
+        .sidebar-mask.open {
+            display: block;
+        }
+        /* 添加管理菜单项的默认隐藏样式 */
+        .admin-only {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <div class="sidebar-mask" id="sidebar-mask" onclick="closeSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+        <h2>功能菜单</h2>
+        <ul>
+            <li onclick="location.href='main.html'">图书列表</li>
+            <li class="active" onclick="location.href='borrow.html'">我的借阅</li>
+            <li class="admin-only" onclick="location.href='borrow-manage.html'">借阅管理</li>
+            <li class="admin-only" onclick="location.href='user.html'">用户管理</li>
+            <li class="admin-only" onclick="location.href='notice.html'">公告管理</li>
+        </ul>
+    </div>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <button class="sidebar-toggle-btn" onclick="openSidebar()">☰ 菜单</button>
+                <h1 class="header-title">我的借阅</h1>
+            </div>
+            <div class="user-info">
+                <span>欢迎您，<span id="username">用户</span></span>
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <table class="borrow-table">
+            <thead>
+            <tr>
+                <th>图书名称</th>
+                <th>借阅日期</th>
+                <th>应还日期</th>
+                <th>实际归还日期</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="borrow-list">
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    // 在页面加载时检查登录状态和权限
+    window.onload = function() {
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        if (!user) {
+            window.location.href = 'index.html';
+            return;
+        }
+        if (user.username) {
+            document.getElementById('username').innerText = user.username;
+        }
+        // 根据用户角色显示/隐藏管理菜单
+        if (user.role === 'ADMIN') {
+            const adminOnlyElements = document.getElementsByClassName('admin-only');
+            for (let element of adminOnlyElements) {
+                element.style.display = 'block';
+            }
+        }
+        loadBorrowRecords();
+    }
+
+    // 加载借阅记录
+    function loadBorrowRecords() {
+        fetch('/borrow/user/records')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayBorrowRecords(data.data);
+                } else {
+                    alert('加载借阅记录失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('加载借阅记录失败');
+            });
+    }
+
+    // 显示借阅记录
+    function displayBorrowRecords(records) {
+        const tbody = document.getElementById('borrow-list');
+        tbody.innerHTML = '';
+        records.forEach(record => {
+            const borrowDate = new Date(record.borrowDate).toLocaleString();
+            const dueDate = new Date(record.dueDate).toLocaleString();
+            const returnDate = record.returnDate ? new Date(record.returnDate).toLocaleString() : '-';
+            
+            let statusText = '';
+            let statusClass = '';
+            if (record.status === 0) {
+                statusText = '借阅中';
+                statusClass = 'status-borrowing';
+            } else if (record.status === 1) {
+                statusText = '已归还';
+                statusClass = 'status-returned';
+            } else if (record.status === 2) {
+                statusText = '已逾期';
+                statusClass = 'status-overdue';
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${record.bookName}</td>
+                    <td>${borrowDate}</td>
+                    <td>${dueDate}</td>
+                    <td>${returnDate}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>
+                        ${record.status === 0 ? 
+                            `<button class="btn btn-primary" onclick="returnBook(${record.id})">归还</button>` : 
+                            ''}
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // 归还图书
+    function returnBook(recordId) {
+        if (confirm('确定要归还这本图书吗？')) {
+            fetch(`/borrow/return/${recordId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('归还成功');
+                    loadBorrowRecords();
+                } else {
+                    alert(data.msg || '归还失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('归还失败');
+            });
+        }
+    }
+
+    // 退出登录
+    function logout() {
+        sessionStorage.removeItem('user');
+        window.location.href = 'index.html';
+    }
+
+    // 侧边栏控制
+    function openSidebar() {
+        document.getElementById('sidebar').classList.add('open');
+        document.getElementById('sidebar-mask').classList.add('open');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-mask').classList.remove('open');
+    }
+</script>
+</body>
+</html> 

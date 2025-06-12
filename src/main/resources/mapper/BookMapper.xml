@@ -64,16 +64,17 @@
     <!-- 关键字+分类联合搜索 -->
     <select id="searchBooksByKeywordAndCategory" resultMap="BookResultMap">
         SELECT * FROM book
-        WHERE
-            (
-                #{keyword} IS NULL OR #{keyword} = ''
-                OR name LIKE CONCAT('%', #{keyword}, '%')
-                OR author LIKE CONCAT('%', #{keyword}, '%')
-                OR publisher LIKE CONCAT('%', #{keyword}, '%')
-                OR category LIKE CONCAT('%', #{keyword}, '%')
-            )
+        WHERE 1=1
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    name LIKE CONCAT('%', #{keyword}, '%')
+                    OR author LIKE CONCAT('%', #{keyword}, '%')
+                    OR publisher LIKE CONCAT('%', #{keyword}, '%')
+                    OR book_number LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
             <if test="category != null and category != '' and category != '选择分类'">
-                AND category = #{category}
+                AND category LIKE CONCAT(#{category}, '%')
             </if>
         ORDER BY create_time DESC
     </select>

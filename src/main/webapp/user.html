@@ -16,7 +16,7 @@
             min-height: 100vh;
         }
         .sidebar {
-            width: 220px;
+            width: 250px;
             background-color: #007aff;
             color: white;
             padding: 20px 0;
@@ -99,6 +99,7 @@
             }
             .sidebar {
                 position: fixed;
+                /* 确保圆角在大屏下也生效 */
                 border-top-right-radius: 16px;
                 border-bottom-right-radius: 16px;
             }
@@ -197,11 +198,13 @@
 <div class="layout">
     <div class="sidebar-mask" id="sidebar-mask" onclick="closeSidebar()"></div>
     <div class="sidebar" id="sidebar">
-        <h2>管理菜单</h2>
+        <h2>功能菜单</h2>
         <ul>
+            <li onclick="location.href='main.html'">图书列表</li>
+            <li onclick="location.href='borrow.html'">我的借阅</li>
+            <li class="admin-only" onclick="location.href='borrow-manage.html'">借阅管理</li>
             <li class="active" onclick="location.href='user.html'">用户管理</li>
-            <li onclick="location.href='main.html'">图书管理</li>
-            <li onclick="location.href='notice.html'">公告管理</li>
+            <li class="admin-only" onclick="location.href='notice.html'">公告管理</li>
         </ul>
     </div>
     <div class="container">
@@ -267,30 +270,28 @@
     </div>
 </div>
 <script>
-    // 在页面加载时检查权限
+    // 在页面加载时检查登录状态和权限
     window.onload = function() {
-        checkAdminPermission();
-        //显示用户名
         const user = JSON.parse(sessionStorage.getItem('user'));
-        if (user && user.username) {
-            document.getElementById('username').innerText = user.username;
+        if (!user) {
+            window.location.href = 'index.html';
+            return;
         }
-        loadUsers();
-    }
-
-    // 检查管理员权限
-    function checkAdminPermission() {
-        const user = JSON.parse(sessionStorage.getItem('user'));
-        if (!user || user.role !== 'ADMIN') {
+        if (user.role !== 'ADMIN') {
             alert('您没有权限访问此页面');
             window.location.href = 'main.html';
+            return;
         }
-    }
-
-    // 页面加载完成后获取用户列表
-    document.addEventListener('DOMContentLoaded', function() {
+        if (user.username) {
+            document.getElementById('username').innerText = user.username;
+        }
+        // 显示所有管理菜单项
+        const adminOnlyElements = document.getElementsByClassName('admin-only');
+        for (let element of adminOnlyElements) {
+            element.style.display = 'block';
+        }
         loadUsers();
-    });
+    }
 
     // 加载用户列表
     function loadUsers() {
@@ -390,17 +391,17 @@
             fetch(`/user/${id}`, {
                 method: 'DELETE'
             })
-                .then(response => response.json())
-                .then(data => {
-                    alert(data.msg);
-                    if (data.success) {
-                        loadUsers();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('删除失败');
-                });
+            .then(response => response.json())
+            .then(data => {
+                alert(data.msg);
+                if (data.success) {
+                    loadUsers();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('删除失败');
+            });
         }
     }
 

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.library.dao.BorrowRecordMapper">
+    <resultMap id="borrowRecordMap" type="com.library.entity.BorrowRecord">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="bookId" column="book_id"/>
+        <result property="borrowDate" column="borrow_date"/>
+        <result property="dueDate" column="due_date"/>
+        <result property="returnDate" column="return_date"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="username" column="username"/>
+        <result property="bookName" column="book_name"/>
+    </resultMap>
+
+    <insert id="insertBorrowRecord" parameterType="com.library.entity.BorrowRecord">
+        INSERT INTO borrow_record (user_id, book_id, borrow_date, due_date, status, create_time, update_time)
+        VALUES (#{userId}, #{bookId}, #{borrowDate}, #{dueDate}, #{status}, NOW(), NOW())
+    </insert>
+
+    <update id="updateBorrowRecord" parameterType="com.library.entity.BorrowRecord">
+        UPDATE borrow_record
+        SET return_date = #{returnDate},
+            status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="getBorrowRecordById" resultMap="borrowRecordMap">
+        SELECT br.*, u.username, b.name as book_name
+        FROM borrow_record br
+        LEFT JOIN user u ON br.user_id = u.id
+        LEFT JOIN book b ON br.book_id = b.id
+        WHERE br.id = #{id}
+    </select>
+
+    <select id="getBorrowRecordsByUserId" resultMap="borrowRecordMap">
+        SELECT br.*, u.username, b.name as book_name
+        FROM borrow_record br
+        LEFT JOIN user u ON br.user_id = u.id
+        LEFT JOIN book b ON br.book_id = b.id
+        WHERE br.user_id = #{userId}
+        ORDER BY br.borrow_date DESC
+    </select>
+
+    <select id="getBorrowRecordsByBookId" resultMap="borrowRecordMap">
+        SELECT br.*, u.username, b.name as book_name
+        FROM borrow_record br
+        LEFT JOIN user u ON br.user_id = u.id
+        LEFT JOIN book b ON br.book_id = b.id
+        WHERE br.book_id = #{bookId}
+        ORDER BY br.borrow_date DESC
+    </select>
+
+    <select id="getCurrentBorrowRecordsByUserId" resultMap="borrowRecordMap">
+        SELECT br.*, u.username, b.name as book_name
+        FROM borrow_record br
+        LEFT JOIN user u ON br.user_id = u.id
+        LEFT JOIN book b ON br.book_id = b.id
+        WHERE br.user_id = #{userId}
+        AND br.status = 0
+        ORDER BY br.borrow_date DESC
+    </select>
+
+    <select id="getAllBorrowRecords" resultMap="borrowRecordMap">
+        SELECT br.*, u.username, b.name as book_name
+        FROM borrow_record br
+        LEFT JOIN user u ON br.user_id = u.id
+        LEFT JOIN book b ON br.book_id = b.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (u.username LIKE CONCAT('%', #{keyword}, '%')
+                OR b.name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY br.borrow_date DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="getBorrowRecordsByPage" resultMap="borrowRecordMap">
+        SELECT br.*, u.username, b.name as book_name
+        FROM borrow_record br
+        LEFT JOIN user u ON br.user_id = u.id
+        LEFT JOIN book b ON br.book_id = b.id
+        ORDER BY br.borrow_date DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="getTotalBorrowRecords" resultType="int">
+        SELECT COUNT(*)
+        FROM borrow_record br
+        LEFT JOIN user u ON br.user_id = u.id
+        LEFT JOIN book b ON br.book_id = b.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (u.username LIKE CONCAT('%', #{keyword}, '%')
+                OR b.name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <select id="getBorrowedBookCount" resultType="int">
+        SELECT COUNT(*) FROM borrow_record 
+        WHERE user_id = #{userId} AND status = 0
+    </select>
+</mapper>

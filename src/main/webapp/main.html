@@ -16,7 +16,7 @@
             min-height: 100vh;
         }
         .sidebar {
-            width: 220px;
+            width: 250px;
             background-color: #007aff;
             color: white;
             padding: 20px 0;
@@ -30,6 +30,7 @@
             transition: transform 0.3s;
             border-top-right-radius: 16px;
             border-bottom-right-radius: 16px;
+            overflow: hidden;
         }
         .sidebar.open {
             transform: translateX(0);
@@ -118,6 +119,7 @@
             }
             .sidebar {
                 position: fixed;
+                /* 确保圆角在大屏下也生效 */
                 border-top-right-radius: 16px;
                 border-bottom-right-radius: 16px;
             }
@@ -195,7 +197,9 @@
         .modal-content {
             position: relative;
             background-color: white;
-            margin: 100px auto;
+            margin: 0 auto;
+            top: 50%;
+            transform: translateY(-50%);
             padding: 20px;
             width: 400px;
             border-radius: 10px;
@@ -249,6 +253,19 @@
             margin: 0 15px;
             color: #666;
         }
+        /* 修改管理菜单项的默认样式 */
+        .admin-only {
+            display: none;  /* 默认隐藏，等待JavaScript检查权限后显示 */
+        }
+        /* 添加按钮样式 */
+        .btn-disabled {
+            background-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+        .btn-disabled:hover {
+            opacity: 1;
+        }
     </style>
 </head>
 
@@ -256,10 +273,12 @@
 <div class="layout">
     <div class="sidebar-mask" id="sidebar-mask" onclick="closeSidebar()"></div>
     <div class="sidebar" id="sidebar">
-        <h2>管理菜单</h2>
+        <h2>功能菜单</h2>
         <ul>
+            <li class="active" onclick="location.href='main.html'">图书列表</li>
+            <li onclick="location.href='borrow.html'">我的借阅</li>
+            <li class="admin-only" onclick="location.href='borrow-manage.html'">借阅管理</li>
             <li class="admin-only" onclick="location.href='user.html'">用户管理</li>
-            <li class="active" onclick="location.href='main.html'">图书管理</li>
             <li class="admin-only" onclick="location.href='notice.html'">公告管理</li>
         </ul>
     </div>
@@ -277,18 +296,19 @@
 
         <div class="content">
             <div class="search-bar">
-                <input type="text" class="search-input" id="search-keyword" placeholder="请输入书名、作者、分类等关键词">
-                <select id="category-select" class="search-input" style="flex: 0.5" onchange="updateBookNumber()">
+                <input type="text" class="search-input" id="search-input" placeholder="请输入书名、作者、出版社、图书编号">
+                <select id="category-select" class="search-input" style="flex: 0.5">
                     <option value="">选择分类</option>
-                    <option value="CP">计算机</option>
-                    <option value="WX">文学</option>
-                    <option value="KH">科幻</option>
-                    <option value="KP">科普</option>
-                    <option value="LS">历史</option>
-                    <option value="JJ">经济</option>
+                    <option value="计算机">计算机</option>
+                    <option value="文学">文学</option>
+                    <option value="科幻">科幻</option>
+                    <option value="科普">科普</option>
+                    <option value="历史">历史</option>
+                    <option value="经济">经济</option>
+                    <option value="经管">经管</option>
                 </select>
-                <button class="btn btn-primary" onclick="searchBooks()">搜索</button>
-                <button class="btn btn-primary admin-only" onclick="showAddModal()">添加图书</button>
+                <button class="btn btn-primary" id="search-btn">搜索</button>
+                <button class="btn btn-primary admin-only" onclick="showAddBookModal()">添加图书</button>
             </div>
             <table class="book-table" id="book-table">
                 <thead>
@@ -371,44 +391,45 @@
     const pageSize = 10;
     let totalItems = 0;
 
-    // 页面加载时优先检查sessionStorage并初始化
+    // 在页面加载时检查登录状态和权限
     window.onload = function() {
-        const userInfoStr = sessionStorage.getItem('user');
-        if (!userInfoStr) {
-            alert('请先登录');
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        if (!user) {
             window.location.href = 'index.html';
             return;
         }
-        const userInfo = JSON.parse(userInfoStr);
-        userRole = userInfo.role;
-        document.getElementById('username').textContent = userInfo.username;
-        setupUIByRole();
+        if (user.username) {
+            document.getElementById('username').innerText = user.username;
+        }
+        // 根据用户角色显示/隐藏管理菜单
+        if (user.role === 'ADMIN') {
+            const adminOnlyElements = document.getElementsByClassName('admin-only');
+            for (let element of adminOnlyElements) {
+                element.style.display = 'block';
+            }
+        }
         loadBooks();
+        
+        // 添加事件监听器
+        const searchBtn = document.getElementById('search-btn');
+        if (searchBtn) {
+            searchBtn.addEventListener('click', searchBooks);
+        }
+        
+        const categorySelect = document.getElementById('category-select');
+        if (categorySelect) {
+            categorySelect.addEventListener('change', searchBooks);
+        }
+        
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchBooks();
+                }
+            });
+        }
     };
-
-    // 根据角色设置界面
-    function setupUIByRole() {
-        const addBtn = document.querySelector('.btn.btn-primary.admin-only');
-        const editBtns = document.querySelectorAll('.edit-btn');
-        const deleteBtns = document.querySelectorAll('.delete-btn');
-        const userManageLink = document.querySelector('li[onclick="location.href=\'user.html\'"]');
-        const noticeManageLink = document.querySelector('li[onclick="location.href=\'notice.html\'"]');
-        if (userRole !== 'ADMIN') {
-            if (addBtn) addBtn.style.display = 'none';
-            editBtns.forEach(btn => btn.style.display = 'none');
-            deleteBtns.forEach(btn => btn.style.display = 'none');
-            if (userManageLink) userManageLink.style.display = 'none';
-            if (noticeManageLink) noticeManageLink.style.display = 'none';
-        }
-    }
-
-    // 退出登录
-    function logout() {
-        if (confirm('确定要退出登录吗？')) {
-            sessionStorage.removeItem('user');
-            window.location.href = 'index.html';
-        }
-    }
 
     // 加载图书列表（使用分页）
     let retryCount = 0;
@@ -466,10 +487,15 @@
     // 显示图书列表
     function displayBooks(books) {
         const tbody = document.getElementById('book-list');
-        tbody.innerHTML = ''; // 清空旧内容
-
-        const fragment = document.createDocumentFragment();
-
+        tbody.innerHTML = '';
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        const isAdmin = user && user.role === 'ADMIN';
+        
+        if (books.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">暂无图书</td></tr>';
+            return;
+        }
+        
         books.forEach(book => {
             let publishDate = book.publishDate ? new Date(book.publishDate).toISOString().split('T')[0] : '-';
 
@@ -485,19 +511,21 @@
             <td>￥${book.price.toFixed(2)}</td>
             <td>${book.stock}</td>
             <td class="action-buttons">
-                ${userRole === 'ADMIN' ? `
+                ${isAdmin ? `
                     <button class="btn btn-primary" onclick="editBook(${book.id})">编辑</button>
                     <button class="btn btn-danger" onclick="deleteBook(${book.id})">删除</button>
-                ` : ''}
+                ` : `
+                    ${book.stock > 0 ? 
+                        `<button class="btn btn-primary" onclick="borrowBook(${book.id})">借阅</button>` : 
+                        `<button class="btn btn-disabled" disabled>无库存</button>`
+                    }
+                `}
             </td>
         `;
 
-            fragment.appendChild(tr);
+            tbody.appendChild(tr);
         });
-
-        tbody.appendChild(fragment);
     }
-
 
     // 分类选择联动表单
     document.getElementById('category-select').addEventListener('change', function() {
@@ -527,21 +555,32 @@
         }
     }
 
+    // 搜索图书
     function searchBooks() {
-        const keyword = document.getElementById('search-keyword').value.trim();
-        const categorySelect = document.getElementById('category-select');
-        const category = categorySelect.options[categorySelect.selectedIndex].text;
-        let url = '/book/search?keyword=' + encodeURIComponent(keyword);
-        if (category && category !== '选择分类') {
-            url += '&category=' + encodeURIComponent(category);
+        const keyword = document.getElementById('search-input').value.trim();
+        const category = document.getElementById('category-select').value;
+        
+        // 构建查询参数
+        const params = new URLSearchParams();
+        if (keyword) {
+            params.append('keyword', keyword);
         }
-        fetch(url)
+        if (category && category !== '选择分类') {
+            params.append('category', category);
+        }
+        
+        // 发送请求
+        fetch(`/book/search?${params.toString()}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     displayBooks(data.data);
+                    // 如果没有找到图书，显示提示
+                    if (data.data.length === 0) {
+                        alert('未找到符合条件的图书');
+                    }
                 } else {
-                    alert('搜索失败');
+                    alert(data.msg || '搜索失败');
                 }
             })
             .catch(error => {
@@ -691,7 +730,31 @@
             }
         }
     });
+
+    // 借阅图书
+    function borrowBook(bookId) {
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        if (!user) {
+            alert('请先登录');
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        fetch(`/borrow/borrow?bookId=${bookId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.msg);
+            if (data.success) {
+                loadBooks(); // 刷新图书列表
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('借阅失败');
+        });
+    }
 </script>
 </body>
 </html>
-

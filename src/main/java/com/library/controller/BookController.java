@@ -47,7 +47,7 @@ public class BookController {
     // 搜索图书不需要管理员权限
     @GetMapping("/search")
     public Map<String, Object> searchBooks(
-            @RequestParam String keyword,
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String category) {
         Map<String, Object> result = new HashMap<>();
         List<Book> books = bookService.searchBooks(keyword, category);
