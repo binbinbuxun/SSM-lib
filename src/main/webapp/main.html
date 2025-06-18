@@ -16,7 +16,7 @@
             min-height: 100vh;
         }
         .sidebar {
-            width: 220px;
+            width: 240px;
             background-color: #007aff;
             color: white;
             padding: 20px 0;
@@ -111,7 +111,7 @@
         }
         @media (min-width: 700px) {
             .container {
-                margin-left: 220px;
+                margin-left: 240px;
             }
             .sidebar-toggle-btn {
                 display: inline-block;
@@ -256,11 +256,14 @@
 <div class="layout">
     <div class="sidebar-mask" id="sidebar-mask" onclick="closeSidebar()"></div>
     <div class="sidebar" id="sidebar">
-        <h2>管理菜单</h2>
+        <h2>功能菜单</h2>
         <ul>
+            <li class="active" onclick="location.href='main.html'">图书列表</li>
+            <li onclick="location.href='borrow.html'">我的借阅</li>
+            <li class="admin-only" onclick="location.href='borrow-manage.html'">借阅管理</li>
             <li class="admin-only" onclick="location.href='user.html'">用户管理</li>
-            <li class="active" onclick="location.href='main.html'">图书管理</li>
             <li class="admin-only" onclick="location.href='notice.html'">公告管理</li>
+            <li onclick="location.href='profile.html'">个人信息</li>
         </ul>
     </div>
     <div class="container">
@@ -382,25 +385,20 @@
         const userInfo = JSON.parse(userInfoStr);
         userRole = userInfo.role;
         document.getElementById('username').textContent = userInfo.username;
-        setupUIByRole();
+        // 根据用户角色显示/隐藏管理菜单
+        if (userRole === 'ADMIN') {
+            const adminOnlyElements = document.getElementsByClassName('admin-only');
+            for (let element of adminOnlyElements) {
+                element.style.display = 'block';
+            }
+        } else {
+            const adminOnlyElements = document.getElementsByClassName('admin-only');
+            for (let element of adminOnlyElements) {
+                element.style.display = 'none';
+            }
+        }
         loadBooks();
     };
-
-    // 根据角色设置界面
-    function setupUIByRole() {
-        const addBtn = document.querySelector('.btn.btn-primary.admin-only');
-        const editBtns = document.querySelectorAll('.edit-btn');
-        const deleteBtns = document.querySelectorAll('.delete-btn');
-        const userManageLink = document.querySelector('li[onclick="location.href=\'user.html\'"]');
-        const noticeManageLink = document.querySelector('li[onclick="location.href=\'notice.html\'"]');
-        if (userRole !== 'ADMIN') {
-            if (addBtn) addBtn.style.display = 'none';
-            editBtns.forEach(btn => btn.style.display = 'none');
-            deleteBtns.forEach(btn => btn.style.display = 'none');
-            if (userManageLink) userManageLink.style.display = 'none';
-            if (noticeManageLink) noticeManageLink.style.display = 'none';
-        }
-    }
 
     // 退出登录
     function logout() {
@@ -488,7 +486,11 @@
                 ${userRole === 'ADMIN' ? `
                     <button class="btn btn-primary" onclick="editBook(${book.id})">编辑</button>
                     <button class="btn btn-danger" onclick="deleteBook(${book.id})">删除</button>
-                ` : ''}
+                ` :
+                (book.stock > 0 ?
+                    `<button class="btn btn-primary" onclick="borrowBook(${book.id})">借阅</button>` :
+                    `<span style='color:#888;'>无库存</span>`
+                )}
             </td>
         `;
 
@@ -498,6 +500,27 @@
         tbody.appendChild(fragment);
     }
 
+    // 借阅图书
+    function borrowBook(bookId) {
+        if (!confirm('确定要借阅这本图书吗？')) return;
+        fetch(`/borrow/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bookId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('借阅成功');
+                loadBooks();
+            } else {
+                alert(data.msg || '借阅失败');
+            }
+        })
+        .catch(error => {
+            alert('借阅失败');
+        });
+    }
 
     // 分类选择联动表单
     document.getElementById('category-select').addEventListener('change', function() {
