@@ -131,4 +131,9 @@ public class BorrowRecordServiceImpl implements BorrowRecordService {
     public BorrowRecord getBorrowRecord(Integer id) {
         return borrowRecordMapper.getBorrowRecordById(id);
     }
-} 
+
+    @Override
+    public List<Book> getTopBorrowedBooks(int limit) {
+        return borrowRecordMapper.getTopBorrowedBooks(limit);
+    }
+}

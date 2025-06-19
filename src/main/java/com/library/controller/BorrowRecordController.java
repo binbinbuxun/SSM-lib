@@ -126,4 +126,10 @@ public class BorrowRecordController {
         result.put("total", total);
         return result;
     }
-} 
+
+    // 获取借阅排行榜（前5名）
+    @GetMapping("/top-books")
+    public List<com.library.entity.Book> getTopBorrowedBooks() {
+        return borrowRecordService.getTopBorrowedBooks(5);
+    }
+}

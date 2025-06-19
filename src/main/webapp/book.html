@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图书管理系统 - 主页</title>
+    <title>图书管理</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -258,7 +258,8 @@
     <div class="sidebar" id="sidebar">
         <h2>功能菜单</h2>
         <ul>
-            <li class="active" onclick="location.href='main.html'">图书列表</li>
+            <li onclick="location.href='main.html'">首页</li>
+            <li class="active" onclick="location.href='book.html'">图书列表</li>
             <li onclick="location.href='borrow.html'">我的借阅</li>
             <li class="admin-only" onclick="location.href='borrow-manage.html'">借阅管理</li>
             <li class="admin-only" onclick="location.href='user.html'">用户管理</li>
@@ -379,7 +380,7 @@
         const userInfoStr = sessionStorage.getItem('user');
         if (!userInfoStr) {
             alert('请先登录');
-            window.location.href = 'index.html';
+            window.location.href = 'login.html';
             return;
         }
         const userInfo = JSON.parse(userInfoStr);
@@ -404,7 +405,7 @@
     function logout() {
         if (confirm('确定要退出登录吗？')) {
             sessionStorage.removeItem('user');
-            window.location.href = 'index.html';
+            window.location.href = 'login.html';
         }
     }
 

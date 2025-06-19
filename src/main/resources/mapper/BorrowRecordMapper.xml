@@ -15,6 +15,21 @@
         <result property="bookName" column="book_name"/>
     </resultMap>
 
+    <resultMap id="BookWithCountMap" type="com.library.entity.Book">
+        <id property="id" column="id"/>
+        <result property="bookNumber" column="book_number"/>
+        <result property="name" column="name"/>
+        <result property="author" column="author"/>
+        <result property="publisher" column="publisher"/>
+        <result property="publishDate" column="publish_date"/>
+        <result property="category" column="category"/>
+        <result property="price" column="price"/>
+        <result property="stock" column="stock"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="borrowCount" column="borrow_count"/>
+    </resultMap>
+
     <insert id="insertBorrowRecord" parameterType="com.library.entity.BorrowRecord">
         INSERT INTO borrow_record (user_id, book_id, borrow_date, due_date, status, create_time, update_time)
         VALUES (#{userId}, #{bookId}, #{borrowDate}, #{dueDate}, #{status}, NOW(), NOW())
@@ -104,5 +119,19 @@
     <select id="getBorrowedBookCount" resultType="int">
         SELECT COUNT(*) FROM borrow_record 
         WHERE user_id = #{userId} AND status = 0
+    </select>
+
+    <!-- 查询借阅次数最多的前N本图书（含图书详细信息） -->
+    <select id="getTopBorrowedBooks" resultMap="BookWithCountMap">
+        SELECT b.*, t.borrow_count
+        FROM book b
+        JOIN (
+            SELECT book_id, COUNT(*) AS borrow_count
+            FROM borrow_record
+            GROUP BY book_id
+            ORDER BY borrow_count DESC
+            LIMIT #{limit}
+        ) t ON b.id = t.book_id
+        ORDER BY t.borrow_count DESC
     </select>
 </mapper>

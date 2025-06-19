@@ -123,6 +123,104 @@
             text-decoration: none;
             color: #005bb5;
         }
+        #captcha-modal {
+            display: none;
+            position: fixed;
+            left: 0; top: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.18);
+            backdrop-filter: blur(2px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        #captcha-modal .captcha-dialog {
+            background: #fff;
+            padding: 38px 32px 32px 32px;
+            border-radius: 18px;
+            min-width: 320px;
+            max-width: 90vw;
+            box-shadow: 0 6px 32px rgba(0,0,0,0.18);
+            text-align: center;
+            position: relative;
+            animation: popIn .25s cubic-bezier(.4,2,.6,1) 1;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        #captcha-modal h3 {
+            margin-top: 0;
+            font-size: 22px;
+            font-weight: 700;
+            color: #007aff;
+            letter-spacing: 1px;
+        }
+        #captcha-img {
+            display: inline-block;
+            font-size: 36px;
+            letter-spacing: 16px;
+            font-weight: bold;
+            background: linear-gradient(90deg,#e3f0ff,#f5f5f5 60%,#e3f0ff);
+            padding: 12px 28px;
+            border-radius: 10px;
+            user-select: none;
+            cursor: pointer;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,122,255,0.08);
+            color: #1976d2;
+            border: 1.5px solid #b3d4fc;
+            transition: background 0.2s;
+        }
+        #captcha-img:hover {
+            background: linear-gradient(90deg,#d0e7ff,#f5f5f5 60%,#d0e7ff);
+        }
+        #captcha-input {
+            width: 70%;
+            padding: 12px 16px;
+            font-size: 18px;
+            border: 1.5px solid #b3d4fc;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            outline: none;
+            transition: border 0.2s;
+        }
+        #captcha-input:focus {
+            border-color: #007aff;
+        }
+        #captcha-modal .captcha-btn {
+            padding: 10px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #captcha-modal .captcha-btn.confirm {
+            background: #007aff;
+            color: #fff;
+        }
+        #captcha-modal .captcha-btn.cancel {
+            background: #f5f5f5;
+            color: #333;
+        }
+        #captcha-modal .captcha-btn.confirm:hover {
+            background: #0056b3;
+        }
+        #captcha-modal .captcha-btn.cancel:hover {
+            background: #e0e0e0;
+        }
+        #captcha-error {
+            color: #ff3b30;
+            margin-top: 12px;
+            display: none;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-shadow: 0 1px 2px #fff;
+        }
     </style>
 </head>
 <body>
@@ -157,7 +255,23 @@
         <button type="submit" class="auth-button">注册</button>
     </form>
     <div class="auth-footer-links">
-        <a href="index.html">已有账号？去登录</a>
+        <a href="login.html">已有账号？去登录</a>
+    </div>
+</div>
+
+<!-- 验证码弹窗 -->
+<div id="captcha-modal">
+    <div class="captcha-dialog">
+        <h3>请输入验证码</h3>
+        <div style="margin-bottom:18px;">
+            <span id="captcha-img" title="点击刷新验证码"></span>
+        </div>
+        <input id="captcha-input" type="text" placeholder="输入验证码">
+        <div style="margin-top:18px;">
+            <button id="captcha-cancel" class="captcha-btn cancel">取消</button>
+            <button id="captcha-confirm" class="captcha-btn confirm">确定</button>
+        </div>
+        <div id="captcha-error">验证码错误</div>
     </div>
 </div>
 
@@ -208,7 +322,7 @@
         .then(data => {
             if (data.success) {
                 alert('注册成功！请返回登录');
-                window.location.href = 'index.html';
+                window.location.href = 'login.html';
             } else {
                 alert(data.msg || '注册失败，请重试');
             }
@@ -218,6 +332,62 @@
             alert('注册失败，请重试');
         });
     });
+
+    // 验证码相关
+    let generatedCaptcha = '';
+    function randomCaptcha() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        let code = '';
+        for (let i = 0; i < 4; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+    }
+    function showCaptchaModal() {
+        generatedCaptcha = randomCaptcha();
+        document.getElementById('captcha-img').innerText = generatedCaptcha;
+        document.getElementById('captcha-input').value = '';
+        document.getElementById('captcha-error').style.display = 'none';
+        document.getElementById('captcha-modal').style.display = 'flex';
+    }
+    document.getElementById('captcha-img').onclick = function() {
+        generatedCaptcha = randomCaptcha();
+        this.innerText = generatedCaptcha;
+    };
+    document.getElementById('captcha-cancel').onclick = function() {
+        document.getElementById('captcha-modal').style.display = 'none';
+    };
+    document.getElementById('captcha-confirm').onclick = function() {
+        const val = document.getElementById('captcha-input').value.trim();
+        if (val.toLowerCase() === generatedCaptcha.toLowerCase()) {
+            document.getElementById('captcha-modal').style.display = 'none';
+            submitRegister();
+        } else {
+            document.getElementById('captcha-error').style.display = 'block';
+        }
+    };
+    // 拦截注册按钮，先弹验证码
+    const regForm = document.querySelector('form');
+    const regBtn = regForm.querySelector('button[type="submit"]');
+    let regFormValid = false;
+    regForm.addEventListener('submit', function(e) {
+        if (!regFormValid) {
+            e.preventDefault();
+            // 先校验表单（可根据你原有校验逻辑调整）
+            let valid = true;
+            regForm.querySelectorAll('input[required]').forEach(input => {
+                if (!input.value.trim()) valid = false;
+            });
+            if (!valid) return;
+            showCaptchaModal();
+        }
+    });
+    // 真正提交注册
+    function submitRegister() {
+        regFormValid = true;
+        regForm.submit();
+        setTimeout(() => { regFormValid = false; }, 1000);
+    }
 </script>
 </body>
 </html>

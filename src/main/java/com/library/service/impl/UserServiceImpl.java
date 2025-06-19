@@ -68,6 +68,10 @@ public class UserServiceImpl implements UserService {
         }
         // 设置默认状态为启用
         user.setStatus(1);
+        // 设置默认角色
+        if (user.getRole() == null || user.getRole().trim().isEmpty()) {
+            user.setRole("USER");
+        }
         return userMapper.insertUser(user) > 0;
     }
 }

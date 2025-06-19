@@ -1,6 +1,7 @@
 package com.library.dao;
 
 import com.library.entity.BorrowRecord;
+import com.library.entity.Book;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
@@ -31,4 +32,7 @@ public interface BorrowRecordMapper {
 
     // 查询用户借阅的图书数量
     int getBorrowedBookCount(@Param("userId") Integer userId);
-} 
+
+    // 查询借阅次数最多的前N本图书
+    java.util.List<com.library.entity.Book> getTopBorrowedBooks(@Param("limit") int limit);
+}

@@ -14,6 +14,7 @@ public class Book {
     private Integer stock;
     private Date createTime;
     private Date updateTime;
+    private Integer borrowCount; // 热门图书借阅次数
 
     // Getters and Setters
     public Integer getId() {
@@ -102,5 +103,13 @@ public class Book {
 
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
+    }
+
+    public Integer getBorrowCount() {
+        return borrowCount;
+    }
+
+    public void setBorrowCount(Integer borrowCount) {
+        this.borrowCount = borrowCount;
     }
 }

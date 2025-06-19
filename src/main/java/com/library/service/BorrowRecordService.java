@@ -1,6 +1,7 @@
 package com.library.service;
 
 import com.library.entity.BorrowRecord;
+import com.library.entity.Book;
 import java.util.List;
 
 public interface BorrowRecordService {
@@ -30,4 +31,7 @@ public interface BorrowRecordService {
 
     // 检查图书是否可借
     boolean isBookAvailable(Integer bookId);
-} 
+
+    // 查询借阅次数最多的前N本图书
+    List<Book> getTopBorrowedBooks(int limit);
+}
