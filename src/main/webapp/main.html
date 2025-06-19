@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书管理系统 - 首页</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 240px;
+            background-color: #007aff;
+            color: white;
+            padding: 20px 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+            border-top-right-radius: 16px;
+            border-bottom-right-radius: 16px;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .sidebar h2 {
+            margin-top: 0;
+            font-size: 18px;
+            text-align: center;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            padding: 14px 30px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .sidebar ul li:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .sidebar ul li.active {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .sidebar .close-btn {
+            display: none;
+        }
+        .sidebar-mask {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.2);
+            z-index: 999;
+        }
+        .sidebar-mask.open {
+            display: block;
+        }
+        .sidebar-toggle-btn {
+            margin-right: 18px;
+            background: #007aff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 14px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .container {
+            flex: 1;
+            margin-left: 0;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-width: 0;
+        }
+        @media (min-width: 700px) {
+            .container {
+                margin-left: 0;
+            }
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .main-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .main-card {
+            flex: 1 1 220px;
+            min-width: 220px;
+            background: #f5f6fa;
+            border-radius: 12px;
+            padding: 32px 24px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: box-shadow 0.2s, background 0.2s;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .main-card:hover {
+            background: #e6f0ff;
+            box-shadow: 0 4px 16px rgba(0,122,255,0.08);
+        }
+        .section {
+            margin-bottom: 36px;
+        }
+        .section-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 18px;
+            color: #007aff;
+        }
+        .rank-list, .hot-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .rank-item, .hot-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .rank-index {
+            font-size: 20px;
+            font-weight: bold;
+            width: 32px;
+            color: #007aff;
+        }
+        .rank-info, .hot-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .book-title {
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .book-author {
+            font-size: 14px;
+            color: #888;
+        }
+        #welcome-title {
+            font-size: 36px;
+            font-weight: 800;
+            color: #007aff;
+            margin: 32px 0 36px 0;
+            letter-spacing: 1px;
+        }
+        .book-flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+            margin-bottom: 36px;
+        }
+        .book-flex-col {
+            flex: 1 1 340px;
+            min-width: 300px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 24px 18px 18px 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        @media (max-width: 900px) {
+            .book-flex-row {
+                flex-direction: column;
+                gap: 18px;
+            }
+        }
+        .notice-section {
+            margin-bottom: 32px;
+        }
+        .notice-flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+            width: 100%;
+        }
+        .notice-card {
+            flex: 1 1 340px;
+            min-width: 300px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 24px 18px 18px 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            max-width: 100%;
+        }
+        .notice-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #007aff;
+            margin-bottom: 10px;
+        }
+        .notice-content {
+            font-size: 18px;
+            color: #222;
+            font-weight: 500;
+            line-height: 1.7;
+            margin-bottom: 8px;
+        }
+        .notice-date {
+            color: #888;
+            font-size: 15px;
+            margin-left: 0;
+            font-weight: 400;
+        }
+        @media (max-width: 900px) {
+            .notice-flex-row {
+                flex-direction: column;
+                gap: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <div class="sidebar-mask" id="sidebar-mask" onclick="closeSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+        <h2>功能菜单</h2>
+        <ul>
+            <li class="active" onclick="location.href='main.html'">🏠 首页</li>
+            <li onclick="location.href='book.html'">📚 图书列表</li>
+            <li onclick="location.href='borrow.html'">📖 我的借阅</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='borrow-manage.html'">🗂️ 借阅管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='user.html'">👥 用户管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='notice.html'">📢 公告管理</li>
+            <li onclick="location.href='profile.html'">🙍‍♂️ 个人信息</li>
+        </ul>
+    </div>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <button class="sidebar-toggle-btn" onclick="openSidebar()">☰ 菜单</button>
+                <h1 class="header-title">首页</h1>
+            </div>
+            <div class="user-info">
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <!-- 欢迎标题 -->
+        <div id="welcome-title"></div>
+        <!-- 公告栏 -->
+        <div class="section notice-section">
+            <div class="notice-flex-row" id="notice-list"></div>
+        </div>
+        <div class="main-cards">
+            <div class="main-card" onclick="location.href='book.html'">📚<br>图书列表</div>
+            <div class="main-card" onclick="location.href='borrow.html'">📖<br>我的借阅</div>
+            <div class="main-card admin-only" onclick="location.href='borrow-manage.html'">🗂️<br>借阅管理</div>
+            <div class="main-card admin-only" onclick="location.href='user.html'">👥<br>用户管理</div>
+            <div class="main-card admin-only" onclick="location.href='notice.html'">📢<br>公告管理</div>
+            <div class="main-card" onclick="location.href='profile.html'">🙍‍♂️<br>个人信息</div>
+        </div>
+        <!-- 新书推荐和热门图书并排 -->
+        <div class="section book-flex-row">
+            <div class="book-flex-col">
+                <div class="section-title">新书推荐</div>
+                <ul class="hot-list" id="newbook-list"></ul>
+            </div>
+            <div class="book-flex-col">
+                <div class="section-title">热门图书</div>
+                <ul class="hot-list" id="hot-list"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // 检查登录状态
+    window.onload = function() {
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        // 欢迎标题
+        document.getElementById('welcome-title').innerText = `欢迎您，${user.username}`;
+        // 根据用户角色显示/隐藏管理菜单
+        const adminOnlyElements = document.getElementsByClassName('admin-only');
+        if (user.role === 'ADMIN') {
+            for (let element of adminOnlyElements) {
+                element.style.display = 'block';
+            }
+        } else {
+            for (let element of adminOnlyElements) {
+                element.style.display = 'none';
+            }
+        }
+        loadNotices();
+        loadTopBooks();
+        loadNewBooks();
+    };
+
+    // 加载借阅排行榜和热门图书
+    function loadTopBooks() {
+        fetch('/borrow/top-books')
+            .then(response => response.json())
+            .then(data => {
+                let books = Array.isArray(data) ? data : (data.data || []);
+                renderHotList(books.slice(0, 5));
+            })
+            .catch(() => {
+                document.getElementById('hot-list').innerHTML = '<li>加载失败</li>';
+            });
+    }
+    function renderHotList(books) {
+        const list = document.getElementById('hot-list');
+        if (!list) return;
+        list.innerHTML = '';
+        books.forEach((book, idx) => {
+            const li = document.createElement('li');
+            li.className = 'hot-item';
+            li.innerHTML = `
+                <span class="rank-index">${idx + 1}</span>
+                <div class="hot-info">
+                    <span class="book-title">${book.name}</span>
+                    <span class="book-author">
+                        作者：${book.author || '-'} | 分类：${book.category || '-'}
+                        <span style="margin-left:12px;color:#ff9500;font-weight:600;">
+                            借阅次数：${book.borrowCount || 0}
+                        </span>
+                    </span>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+        if (books.length === 0) {
+            list.innerHTML = '<li>暂无数据</li>';
+        }
+    }
+    // 公告栏
+    function loadNotices() {
+        fetch('/notice/list')
+            .then(res => res.json())
+            .then(data => {
+                let notices = Array.isArray(data) ? data : (data.data || []);
+                const list = document.getElementById('notice-list');
+                list.innerHTML = '';
+                if (notices.length > 0) {
+                    notices.slice(0, 3).forEach(notice => {
+                        const div = document.createElement('div');
+                        div.className = 'notice-card';
+                        div.innerHTML = `<div class='notice-title'>${notice.title}</div><div class='notice-content'>${notice.content}</div><span class='notice-date'>${notice.date || ''}</span>`;
+                        list.appendChild(div);
+                    });
+                } else {
+                    list.innerHTML = '<span style="color:#888;font-size:18px;">暂无公告</span>';
+                }
+            })
+            .catch(() => {
+                document.getElementById('notice-list').innerHTML = '<span style="color:#ff3b30;font-size:18px;">加载失败</span>';
+            });
+    }
+    // 新书推荐
+    function loadNewBooks() {
+        fetch('/book/list')
+            .then(res => res.json())
+            .then(data => {
+                let books = Array.isArray(data) ? data : (data.data || []);
+                // 按 create_time 字段降序排序，取前5本
+                books.sort((a, b) => new Date(b.createTime || b.create_time) - new Date(a.createTime || a.create_time));
+                const list = document.getElementById('newbook-list');
+                list.innerHTML = '';
+                books.slice(0, 5).forEach((book, idx) => {
+                    const li = document.createElement('li');
+                    li.className = 'hot-item';
+                    li.innerHTML = `
+                        <span class="rank-index">${idx + 1}</span>
+                        <div class="hot-info">
+                            <span class="book-title">${book.name}</span>
+                            <span class="book-author">作者：${book.author || '-'} | 分类：${book.category || '-'} | 上架时间：${book.createTime ? (new Date(book.createTime)).toLocaleDateString() : '-'}</span>
+                        </div>
+                    `;
+                    list.appendChild(li);
+                });
+                if (books.length === 0) {
+                    list.innerHTML = '<li>暂无新书</li>';
+                }
+            })
+            .catch(() => {
+                document.getElementById('newbook-list').innerHTML = '<li>加载失败</li>';
+            });
+    }
+    // 退出登录
+    function logout() {
+        sessionStorage.removeItem('user');
+        window.location.href = 'login.html';
+    }
+    // 侧边栏控制
+    function openSidebar() {
+        document.getElementById('sidebar').classList.add('open');
+        document.getElementById('sidebar-mask').classList.add('open');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-mask').classList.remove('open');
+    }
+    // 点击除侧边栏外区域关闭侧边栏（大屏小屏都生效）
+    document.getElementById('sidebar-mask').addEventListener('click', closeSidebar);
+    document.addEventListener('click', function(e) {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarMask = document.getElementById('sidebar-mask');
+        if (sidebar.classList.contains('open')) {
+            if (!sidebar.contains(e.target) && !e.target.classList.contains('sidebar-toggle-btn')) {
+                closeSidebar();
+            }
+        }
+    });
+</script>
+</body>
+</html> 
