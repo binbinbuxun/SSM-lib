@@ -121,22 +121,17 @@ public class UserController {
             return result;
         }
         User currentUser = (User) userObj;
-        
-        // 确保只能修改自己的信息
         if (!currentUser.getId().equals(user.getId())) {
             result.put("success", false);
             result.put("msg", "无权修改其他用户信息");
             return result;
         }
-        
-        // 不允许修改用户名和角色
-        user.setUsername(currentUser.getUsername());
-        user.setRole(currentUser.getRole());
-        
-        boolean success = userService.updateUser(user);
+        // 只允许修改age和gender
+        currentUser.setAge(user.getAge());
+        currentUser.setGender(user.getGender());
+        boolean success = userService.updateUserProfile(currentUser);
         if (success) {
-            // 更新session中的用户信息
-            session.setAttribute("user", user);
+            session.setAttribute("user", currentUser);
         }
         result.put("success", success);
         result.put("msg", success ? "更新成功" : "更新失败");

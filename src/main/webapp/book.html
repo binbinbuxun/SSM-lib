@@ -100,9 +100,6 @@
             font-weight: 600;
             letter-spacing: 1px;
             line-height: 1.2;
-            height: 38px;
-            display: flex;
-            align-items: center;
         }
         .user-info {
             display: flex;
@@ -164,6 +161,19 @@
         }
         .btn:hover {
             opacity: 0.9;
+        }
+        .btn[disabled], .btn:disabled {
+            cursor: not-allowed !important;
+            opacity: 0.7;
+        }
+        .btn-secondary {
+            background-color: #bdbdbd !important;
+            color: #fff !important;
+            border: none;
+        }
+        .btn-secondary:hover, .btn-secondary:focus {
+            background-color: #9e9e9e !important;
+            color: #fff !important;
         }
         .book-table {
             width: 100%;
@@ -249,6 +259,14 @@
             margin: 0 15px;
             color: #666;
         }
+        .btn-warning {
+            background-color: #ffa726 !important;
+            color: #fff !important;
+        }
+        .btn-warning:hover, .btn-warning:focus {
+            background-color: #fb8c00 !important;
+            color: #fff !important;
+        }
     </style>
 </head>
 
@@ -258,13 +276,16 @@
     <div class="sidebar" id="sidebar">
         <h2>功能菜单</h2>
         <ul>
-            <li onclick="location.href='main.html'">首页</li>
-            <li class="active" onclick="location.href='book.html'">图书列表</li>
-            <li onclick="location.href='borrow.html'">我的借阅</li>
-            <li class="admin-only" onclick="location.href='borrow-manage.html'">借阅管理</li>
-            <li class="admin-only" onclick="location.href='user.html'">用户管理</li>
-            <li class="admin-only" onclick="location.href='notice.html'">公告管理</li>
-            <li onclick="location.href='profile.html'">个人信息</li>
+            <li onclick="location.href='main.html'">🏠 首页</li>
+            <li class="active" onclick="location.href='book.html'">📚 图书列表</li>
+            <li onclick="location.href='borrow.html'">📖 我的借阅</li>
+            <li onclick="location.href='bookshelf.html'">⭐ 我的书架</li>
+            <li onclick="location.href='message.html'">🔔 个人消息</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='message-manage.html'">📝 消息管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='borrow-manage.html'">🗂️ 借阅管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='user.html'">👥 用户管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='notice.html'">📢 公告管理</li>
+            <li onclick="location.href='profile.html'">🙍‍♂️ 个人信息</li>
         </ul>
     </div>
     <div class="container">
@@ -374,9 +395,11 @@
     let currentPage = 1;
     const pageSize = 10;
     let totalItems = 0;
+    window.favoriteBookIds = [];
+    window.reservedBookIds = [];
 
     // 页面加载时优先检查sessionStorage并初始化
-    window.onload = function() {
+    window.onload = async function() {
         const userInfoStr = sessionStorage.getItem('user');
         if (!userInfoStr) {
             alert('请先登录');
@@ -398,6 +421,8 @@
                 element.style.display = 'none';
             }
         }
+        await loadFavorites();
+        await loadReservations();
         loadBooks();
     };
 
@@ -416,11 +441,11 @@
         try {
             const response = await fetch(`/book/page?pageNum=${currentPage}&pageSize=${pageSize}`);
             const result = await response.json();
-
             if (result.success) {
                 const books = result.data;
                 totalItems = result.total;
                 updatePaginationInfo();
+                window.lastBooks = books; // 记录当前数据
                 displayBooks(books);
             } else {
                 throw new Error("接口返回失败");
@@ -432,7 +457,7 @@
                 setTimeout(() => {
                     alert('正在尝试重新加载...');
                     loadBooks();
-                }, 1000); // 1秒后重试
+                }, 1000);
             } else {
                 alert('加载图书失败，请刷新页面重试');
             }
@@ -465,46 +490,46 @@
     // 显示图书列表
     function displayBooks(books) {
         const tbody = document.getElementById('book-list');
-        tbody.innerHTML = ''; // 清空旧内容
-
+        tbody.innerHTML = '';
         const fragment = document.createDocumentFragment();
-
         books.forEach(book => {
             let publishDate = book.publishDate ? new Date(book.publishDate).toISOString().split('T')[0] : '-';
-
+            const isFav = window.favoriteBookIds.includes(Number(book.id));
+            const isNoStock = book.stock === 0;
+            const isReserved = window.reservedBookIds && window.reservedBookIds.includes(Number(book.id));
             const tr = document.createElement('tr');
-
             tr.innerHTML = `
-            <td>${book.bookNumber || '-'}</td>
-            <td>${book.name}</td>
-            <td>${book.author}</td>
-            <td>${book.publisher || '-'}</td>
-            <td>${book.category || '-'}</td>
-            <td>${publishDate}</td>
-            <td>￥${book.price.toFixed(2)}</td>
-            <td>${book.stock}</td>
-            <td class="action-buttons">
-                ${userRole === 'ADMIN' ? `
-                    <button class="btn btn-primary" onclick="editBook(${book.id})">编辑</button>
-                    <button class="btn btn-danger" onclick="deleteBook(${book.id})">删除</button>
-                ` :
-                (book.stock > 0 ?
-                    `<button class="btn btn-primary" onclick="borrowBook(${book.id})">借阅</button>` :
-                    `<span style='color:#888;'>无库存</span>`
-                )}
-            </td>
-        `;
-
+                <td>${book.bookNumber || '-'}</td>
+                <td>${book.name}</td>
+                <td>${book.author}</td>
+                <td>${book.publisher || '-'}</td>
+                <td>${book.category || '-'}</td>
+                <td>${publishDate}</td>
+                <td>￥${book.price.toFixed(2)}</td>
+                <td>${isNoStock ? `<span style='color:#ff3b30;font-weight:bold;'>无库存</span>` : book.stock}</td>
+                <td class="action-buttons">
+                    ${userRole === 'ADMIN' ? `
+                        <button class="btn btn-primary" onclick="editBook(${book.id})">编辑</button>
+                        <button class="btn btn-danger" onclick="deleteBook(${book.id})">删除</button>
+                    ` :
+                    (isNoStock ?
+                        `<button class="btn ${isReserved ? 'btn-secondary' : 'btn-default'}" onclick="${isReserved ? `cancelReservation(${book.id})` : `reserveBook(${book.id})`}" ${isReserved ? '' : ''}>${isReserved ? '取消预约' : '预约'}</button>` :
+                        `<button class="btn btn-primary" onclick="borrowBook(${book.id})">借阅</button>`
+                    )}
+                    <button class="btn ${isFav ? 'btn-danger' : 'btn-orange'}" onclick="toggleFavorite(${book.id})">
+                        ${isFav ? '取消收藏' : '收藏'}
+                    </button>
+                </td>
+            `;
             fragment.appendChild(tr);
         });
-
         tbody.appendChild(fragment);
     }
 
     // 借阅图书
     function borrowBook(bookId) {
         if (!confirm('确定要借阅这本图书吗？')) return;
-        fetch(`/borrow/add`, {
+        fetch(`/borrow/borrow`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ bookId })
@@ -576,7 +601,10 @@
 
     // 显示添加图书模态框
     function showAddModal() {
-        if (!checkAdminPermission()) return;
+        if (!checkAdminPermission()) {
+            alert('无权限');
+            return;
+        }
         document.getElementById('modal-title').textContent = '添加图书';
         document.getElementById('book-form').reset();
         document.getElementById('book-id').value = '';
@@ -591,6 +619,10 @@
 
     // 编辑图书
     function editBook(id) {
+        if (!checkAdminPermission()) {
+            alert('无权限');
+            return;
+        }
         fetch(`/book/${id}`)
             .then(response => response.json())
             .then(data => {
@@ -663,21 +695,25 @@
 
     // 删除图书
     function deleteBook(id) {
-        if (!checkAdminPermission()) return;
-        if (confirm('确定要删除这本书吗？此操作不可恢复！')) {
-            fetch(`/book/${id}`, { method: 'DELETE' })
-                .then(response => response.json())
-                .then((data) => {
-                    alert(data.msg);
-                    if (data.success) {
-                        loadBooks();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('删除失败');
-                });
+        if (!checkAdminPermission()) {
+            alert('无权限');
+            return;
         }
+        if (!confirm('确定要删除这本图书吗？')) {
+            return;
+        }
+        fetch(`/book/${id}`, { method: 'DELETE' })
+            .then(response => response.json())
+            .then((data) => {
+                alert(data.msg);
+                if (data.success) {
+                    loadBooks();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('删除失败');
+            });
     }
 
     // 关闭模态框
@@ -705,6 +741,94 @@
             }
         }
     });
+
+    // 权限判断函数
+    function checkAdminPermission() {
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        return user && user.role && user.role.toLowerCase() === 'admin';
+    }
+
+    async function loadFavorites() {
+        const resp = await fetch('/favorite/list');
+        const data = await resp.json();
+        if (data.success) {
+            window.favoriteBookIds = data.data.map(fav => Number(fav.bookId));
+        } else {
+            window.favoriteBookIds = [];
+        }
+    }
+
+    async function toggleFavorite(bookId) {
+        const idNum = Number(bookId);
+        const isFav = window.favoriteBookIds.includes(idNum);
+        const url = isFav ? '/favorite/remove' : '/favorite/add';
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bookId })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            alert(isFav ? '已取消收藏' : '收藏成功');
+            // 立即本地更新
+            if (isFav) {
+                window.favoriteBookIds = window.favoriteBookIds.filter(id => id !== idNum);
+            } else {
+                window.favoriteBookIds.push(idNum);
+            }
+            displayBooks(window.lastBooks || []);
+            await loadFavorites();
+            await loadBooks();
+        } else {
+            alert(data.msg || '操作失败');
+        }
+    }
+
+    async function loadReservations() {
+        const resp = await fetch('/reservation/list');
+        const data = await resp.json();
+        if (data.success) {
+            window.reservedBookIds = data.data.filter(r => r.status === 'WAITING').map(r => Number(r.bookId));
+        } else {
+            window.reservedBookIds = [];
+        }
+    }
+
+    async function reserveBook(bookId) {
+        if (window.reservedBookIds.includes(Number(bookId))) {
+            alert('您已预约该图书');
+            return;
+        }
+        const resp = await fetch('/reservation/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bookId })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            alert('预约成功！');
+            await loadReservations();
+            loadBooks();
+        } else {
+            alert(data.msg || '预约失败');
+        }
+    }
+
+    async function cancelReservation(bookId) {
+        const resp = await fetch('/reservation/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bookId })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            alert('取消预约成功！');
+            await loadReservations();
+            loadBooks();
+        } else {
+            alert(data.msg || '取消预约失败');
+        }
+    }
 </script>
 </body>
 </html>

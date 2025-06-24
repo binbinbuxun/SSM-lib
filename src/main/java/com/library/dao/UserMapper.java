@@ -21,4 +21,6 @@ public interface UserMapper {
     int insertUser(User user);
 
     User login(@Param("username") String username, @Param("password") String password);
+
+    int updateUserProfile(User user);
 }

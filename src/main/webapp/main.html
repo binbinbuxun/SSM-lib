@@ -203,7 +203,8 @@
             }
         }
         .notice-section {
-            margin-bottom: 32px;
+            margin-bottom: 36px;
+            width: 100%;
         }
         .notice-flex-row {
             display: flex;
@@ -245,6 +246,25 @@
                 gap: 18px;
             }
         }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #007aff;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #ff3b30;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
@@ -256,6 +276,9 @@
             <li class="active" onclick="location.href='main.html'">🏠 首页</li>
             <li onclick="location.href='book.html'">📚 图书列表</li>
             <li onclick="location.href='borrow.html'">📖 我的借阅</li>
+            <li onclick="location.href='bookshelf.html'">⭐ 我的书架</li>
+            <li onclick="location.href='message.html'">🔔 个人消息</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='message-manage.html'">📝 消息管理</li>
             <li class="admin-only" style="display:none;" onclick="location.href='borrow-manage.html'">🗂️ 借阅管理</li>
             <li class="admin-only" style="display:none;" onclick="location.href='user.html'">👥 用户管理</li>
             <li class="admin-only" style="display:none;" onclick="location.href='notice.html'">📢 公告管理</li>
@@ -276,9 +299,11 @@
         <div id="welcome-title"></div>
         <!-- 公告栏 -->
         <div class="section notice-section">
+            <div class="section-title">公告</div>
             <div class="notice-flex-row" id="notice-list"></div>
         </div>
-        <div class="main-cards">
+        <div class="section-title" style="margin-bottom:32px;">快捷菜单</div>
+        <div class="main-cards" style="margin-bottom:36px;">
             <div class="main-card" onclick="location.href='book.html'">📚<br>图书列表</div>
             <div class="main-card" onclick="location.href='borrow.html'">📖<br>我的借阅</div>
             <div class="main-card admin-only" onclick="location.href='borrow-manage.html'">🗂️<br>借阅管理</div>
@@ -417,8 +442,10 @@
     }
     // 退出登录
     function logout() {
-        sessionStorage.removeItem('user');
-        window.location.href = 'login.html';
+        if (confirm('确定要退出登录吗？')) {
+            sessionStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
     }
     // 侧边栏控制
     function openSidebar() {

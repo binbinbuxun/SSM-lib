@@ -34,4 +34,6 @@ public interface BorrowRecordService {
 
     // 查询借阅次数最多的前N本图书
     List<Book> getTopBorrowedBooks(int limit);
+
+    boolean renewBorrowRecord(int borrowRecordId);
 }

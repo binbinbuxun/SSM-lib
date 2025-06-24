@@ -1,6 +1,7 @@
 package com.library.service.impl;
 
 import com.library.dao.BookMapper;
+import com.library.dao.BorrowRecordMapper;
 import com.library.entity.Book;
 import com.library.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,9 @@ public class BookServiceImpl implements BookService {
 
     @Autowired
     private BookMapper bookMapper;
+
+    @Autowired
+    private BorrowRecordMapper borrowRecordMapper;
 
     @Override
     public boolean addBook(Book book) {
@@ -36,6 +40,10 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public boolean deleteBook(Integer id) {
+        int count = borrowRecordMapper.getBorrowCountByBookId(id);
+        if (count > 0) {
+            throw new RuntimeException("该图书有借阅记录，无法删除！");
+        }
         return bookMapper.deleteBook(id) > 0;
     }
 

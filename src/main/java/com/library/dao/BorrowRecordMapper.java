@@ -35,4 +35,12 @@ public interface BorrowRecordMapper {
 
     // 查询借阅次数最多的前N本图书
     java.util.List<com.library.entity.Book> getTopBorrowedBooks(@Param("limit") int limit);
+
+    // 续借借阅记录
+    int renewBorrowRecord(BorrowRecord record);
+
+    int getBorrowCountByBookId(Integer bookId);
+
+    // 查询所有未归还的借阅记录
+    List<BorrowRecord> getAllUnreturned();
 }

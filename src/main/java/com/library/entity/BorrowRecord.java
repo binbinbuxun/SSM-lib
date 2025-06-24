@@ -14,6 +14,7 @@ public class BorrowRecord {
     private Date updateTime;
     private String username;  // 用户名
     private String bookName;  // 书名
+    private Integer renewCount;
 
     // Getters and Setters
     public Integer getId() {
@@ -103,4 +104,12 @@ public class BorrowRecord {
     public void setBookName(String bookName) {
         this.bookName = bookName;
     }
-} 
+
+    public Integer getRenewCount() {
+        return renewCount;
+    }
+
+    public void setRenewCount(Integer renewCount) {
+        this.renewCount = renewCount;
+    }
+}

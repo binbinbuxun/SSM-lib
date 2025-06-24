@@ -60,4 +60,12 @@
         AND password = #{password}
         AND status = 1
     </select>
+
+    <update id="updateUserProfile" parameterType="com.library.entity.User">
+        UPDATE user
+        SET age = #{age},
+            gender = #{gender},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
 </mapper>

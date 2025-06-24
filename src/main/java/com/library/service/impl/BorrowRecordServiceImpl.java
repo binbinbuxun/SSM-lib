@@ -5,7 +5,9 @@ import com.library.dao.BookMapper;
 import com.library.entity.BorrowRecord;
 import com.library.entity.Book;
 import com.library.service.BorrowRecordService;
+import com.library.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,9 @@ public class BorrowRecordServiceImpl implements BorrowRecordService {
 
     @Autowired
     private BookMapper bookMapper;
+
+    @Autowired
+    private MessageService messageService;
 
     @Override
     @Transactional
@@ -135,5 +140,45 @@ public class BorrowRecordServiceImpl implements BorrowRecordService {
     @Override
     public List<Book> getTopBorrowedBooks(int limit) {
         return borrowRecordMapper.getTopBorrowedBooks(limit);
+    }
+
+    @Override
+    public boolean renewBorrowRecord(int borrowRecordId) {
+        BorrowRecord record = borrowRecordMapper.getBorrowRecordById(borrowRecordId);
+        if (record == null) {
+            throw new RuntimeException("借阅记录不存在");
+        }
+        if (record.getRenewCount() != 0) {
+            throw new RuntimeException("该图书已续借过一次，不能再次续借");
+        }
+        if (record.getStatus() != 0) {
+            throw new RuntimeException("该图书已归还，不能续借");
+        }
+        // 计算新的到期时间（在原dueDate基础上延长30天）
+        Date oldDueDate = record.getDueDate();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(oldDueDate);
+        calendar.add(Calendar.DAY_OF_MONTH, 30);
+        Date newDueDate = calendar.getTime();
+        record.setDueDate(newDueDate);
+        int updated = borrowRecordMapper.renewBorrowRecord(record);
+        return updated > 0;
+    }
+
+    /**
+     * 每天凌晨2点检查借阅到期提醒（7天、3天）
+     */
+    @Scheduled(cron = "0 0 2 * * ?")
+    public void checkDueReminders() {
+        List<BorrowRecord> all = borrowRecordMapper.getAllUnreturned();
+        Date now = new Date();
+        for (BorrowRecord record : all) {
+            if (record.getDueDate() == null || record.getStatus() != 0) continue;
+            long days = (record.getDueDate().getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+            if (days == 7 || days == 3) {
+                String msg = String.format("您借阅的《%s》还有%d天到期，请及时归还。", record.getBookName(), days);
+                messageService.sendMessage(record.getUserId(), msg, "SYSTEM");
+            }
+        }
     }
 }

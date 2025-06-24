@@ -30,6 +30,7 @@
             transition: transform 0.3s;
             border-top-right-radius: 16px;
             border-bottom-right-radius: 16px;
+            overflow-y: auto;
         }
         .sidebar.open {
             transform: translateX(0);
@@ -86,7 +87,7 @@
             margin-left: 0;
             padding: 30px;
             background-color: white;
-            border-radius: 0 10px 10px 0;
+            border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             min-width: 0;
         }
@@ -126,6 +127,19 @@
             margin-top: 8px;
             color: #444;
         }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
         .header-title {
             margin: 0 0 0 16px;
             font-size: 28px;
@@ -133,32 +147,54 @@
             letter-spacing: 1px;
             line-height: 1.2;
         }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #007aff;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #ff3b30;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
 <div class="layout">
     <div class="sidebar-mask" id="sidebar-mask" onclick="closeSidebar()"></div>
     <div class="sidebar" id="sidebar">
-        <h2>管理菜单</h2>
+        <h2>功能菜单</h2>
         <ul>
-            <li onclick="location.href='main.html'">首页</li>
-            <li onclick="location.href='book.html'">图书列表</li>
-            <li onclick="location.href='borrow.html'">我的借阅</li>
-            <li class="admin-only" onclick="location.href='borrow-manage.html'">借阅管理</li>
-            <li class="admin-only" onclick="location.href='user.html'">用户管理</li>
-            <li class="admin-only active" onclick="location.href='notice.html'">公告管理</li>
-            <li onclick="location.href='profile.html'">个人信息</li>
+            <li onclick="location.href='main.html'">🏠 首页</li>
+            <li onclick="location.href='book.html'">📚 图书列表</li>
+            <li onclick="location.href='borrow.html'">📖 我的借阅</li>
+            <li onclick="location.href='bookshelf.html'">⭐ 我的书架</li>
+            <li onclick="location.href='message.html'">🔔 个人消息</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='message-manage.html'">📝 消息管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='borrow-manage.html'">🗂️ 借阅管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='user.html'">👥 用户管理</li>
+            <li class="admin-only active" style="display:none;" onclick="location.href='notice.html'">📢 公告管理</li>
+            <li onclick="location.href='profile.html'">🙍‍♂️ 个人信息</li>
         </ul>
     </div>
     <div class="container">
-        <div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-            <div class="header-left" style="display: flex; align-items: center;">
+        <div class="header">
+            <div class="header-left">
                 <button class="sidebar-toggle-btn" onclick="openSidebar()">☰ 菜单</button>
                 <h1 class="header-title">公告管理</h1>
             </div>
-            <div class="user-info" style="display: flex; align-items: center;">
-                <span style="margin-right: 16px;">欢迎您，<span id="username">用户</span></span>
-                <button class="btn btn-danger" onclick="logout()" style="background: #ff4d4f; color: #fff; border: none; border-radius: 4px; padding: 6px 16px; cursor: pointer;">退出登录</button>
+            <div class="user-info">
+                <span>欢迎您，<span id="username">用户</span></span>
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
             </div>
         </div>
         <!-- 公告管理内容区域，可根据需要扩展 -->
@@ -217,7 +253,12 @@
         if (user && user.username) {
             document.getElementById('username').innerText = user.username;
         }
+        // 显示所有管理员菜单项
         if (user && user.role && user.role.toLowerCase() === 'admin') {
+            const adminOnlyElements = document.getElementsByClassName('admin-only');
+            for (let element of adminOnlyElements) {
+                element.style.display = 'block';
+            }
             document.getElementById('notice-admin-panel').style.display = 'block';
         }
         fetchNoticeList();
@@ -335,8 +376,10 @@
             });
     }
     function logout() {
-        sessionStorage.removeItem('user');
-        window.location.href = 'login.html';
+        if (confirm('确定要退出登录吗？')) {
+            sessionStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
     }
     // 点击除侧边栏外区域关闭侧边栏（大屏小屏都生效）
     document.getElementById('sidebar-mask').addEventListener('click', closeSidebar);

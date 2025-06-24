@@ -21,7 +21,8 @@ public class BorrowRecordController {
 
     // 借阅图书
     @PostMapping("/borrow")
-    public Map<String, Object> borrowBook(@RequestParam Integer bookId, HttpSession session) {
+    public Map<String, Object> borrowBook(@RequestBody Map<String, Integer> payload, HttpSession session) {
+        Integer bookId = payload.get("bookId");
         Map<String, Object> result = new HashMap<>();
         Object userObj = session.getAttribute("user");
         if (userObj == null) {
@@ -131,5 +132,20 @@ public class BorrowRecordController {
     @GetMapping("/top-books")
     public List<com.library.entity.Book> getTopBorrowedBooks() {
         return borrowRecordService.getTopBorrowedBooks(5);
+    }
+
+    @PostMapping("/renew")
+    @ResponseBody
+    public Map<String, Object> renewBorrowRecord(@RequestParam int id) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            boolean success = borrowRecordService.renewBorrowRecord(id);
+            result.put("success", success);
+            result.put("msg", success ? "续借成功" : "续借失败，未知原因");
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("msg", e.getMessage());
+        }
+        return result;
     }
 }

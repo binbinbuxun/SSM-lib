@@ -13,6 +13,7 @@
         <result property="updateTime" column="update_time"/>
         <result property="username" column="username"/>
         <result property="bookName" column="book_name"/>
+        <result property="renewCount" column="renew_count"/>
     </resultMap>
 
     <resultMap id="BookWithCountMap" type="com.library.entity.Book">
@@ -133,5 +134,24 @@
             LIMIT #{limit}
         ) t ON b.id = t.book_id
         ORDER BY t.borrow_count DESC
+    </select>
+
+    <update id="renewBorrowRecord" parameterType="com.library.entity.BorrowRecord">
+    UPDATE borrow_record
+    SET due_date = #{dueDate},
+        renew_count = renew_count + 1,
+        update_time = NOW()
+    WHERE id = #{id} AND renew_count = 0
+    </update>
+
+    <select id="getBorrowCountByBookId" resultType="int">
+        SELECT COUNT(*) FROM borrow_record WHERE book_id = #{bookId}
+    </select>
+
+    <select id="getAllUnreturned" resultType="com.library.entity.BorrowRecord">
+        SELECT br.*, b.name AS book_name
+        FROM borrow_record br
+        LEFT JOIN book b ON br.book_id = b.id
+        WHERE br.status = 0
     </select>
 </mapper>

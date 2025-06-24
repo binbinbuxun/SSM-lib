@@ -174,13 +174,16 @@
     <div class="sidebar" id="sidebar">
         <h2>功能菜单</h2>
         <ul>
-            <li onclick="location.href='main.html'">首页</li>
-            <li onclick="location.href='book.html'">图书列表</li>
-            <li class="active" onclick="location.href='borrow.html'">我的借阅</li>
-            <li class="admin-only" onclick="location.href='borrow-manage.html'">借阅管理</li>
-            <li class="admin-only" onclick="location.href='user.html'">用户管理</li>
-            <li class="admin-only" onclick="location.href='notice.html'">公告管理</li>
-            <li onclick="location.href='profile.html'">个人信息</li>
+            <li onclick="location.href='main.html'">🏠 首页</li>
+            <li onclick="location.href='book.html'">📚 图书列表</li>
+            <li class="active" onclick="location.href='borrow.html'">📖 我的借阅</li>
+            <li onclick="location.href='bookshelf.html'">⭐ 我的书架</li>
+            <li onclick="location.href='message.html'">🔔 个人消息</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='message-manage.html'">📝 消息管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='borrow-manage.html'">🗂️ 借阅管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='user.html'">👥 用户管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='notice.html'">📢 公告管理</li>
+            <li onclick="location.href='profile.html'">🙍‍♂️ 个人信息</li>
         </ul>
     </div>
     <div class="container">
@@ -252,39 +255,57 @@
     function displayBorrowRecords(records) {
         const tbody = document.getElementById('borrow-list');
         tbody.innerHTML = '';
-        records.forEach(record => {
-            const borrowDate = new Date(record.borrowDate).toLocaleString();
-            const dueDate = new Date(record.dueDate).toLocaleString();
-            const returnDate = record.returnDate ? new Date(record.returnDate).toLocaleString() : '-';
-            
-            let statusText = '';
-            let statusClass = '';
-            if (record.status === 0) {
-                statusText = '借阅中';
-                statusClass = 'status-borrowing';
-            } else if (record.status === 1) {
-                statusText = '已归还';
-                statusClass = 'status-returned';
-            } else if (record.status === 2) {
-                statusText = '已逾期';
-                statusClass = 'status-overdue';
+        const noDataDivId = 'no-borrow-data';
+        let noDataDiv = document.getElementById(noDataDivId);
+        if (records.length === 0) {
+            if (!noDataDiv) {
+                noDataDiv = document.createElement('div');
+                noDataDiv.id = noDataDivId;
+                noDataDiv.style.textAlign = 'center';
+                noDataDiv.style.margin = '40px 0 20px 0';
+                noDataDiv.innerHTML = `
+                    <div style="font-size:20px;color:#888;margin-bottom:18px;">暂无借阅记录</div>
+                    <button class="btn btn-primary" onclick="location.href='book.html'">去借书</button>
+                `;
+                tbody.parentNode.parentNode.insertBefore(noDataDiv, tbody.parentNode.nextSibling);
             }
+        } else {
+            if (noDataDiv) noDataDiv.remove();
+            records.forEach(record => {
+                const borrowDate = new Date(record.borrowDate).toLocaleString();
+                const dueDate = new Date(record.dueDate).toLocaleString();
+                const returnDate = record.returnDate ? new Date(record.returnDate).toLocaleString() : '-';
+                
+                let statusText = '';
+                let statusClass = '';
+                if (record.status === 0) {
+                    statusText = '借阅中';
+                    statusClass = 'status-borrowing';
+                } else if (record.status === 1) {
+                    statusText = '已归还';
+                    statusClass = 'status-returned';
+                } else if (record.status === 2) {
+                    statusText = '已逾期';
+                    statusClass = 'status-overdue';
+                }
 
-            tbody.innerHTML += `
-                <tr>
-                    <td>${record.bookName}</td>
-                    <td>${borrowDate}</td>
-                    <td>${dueDate}</td>
-                    <td>${returnDate}</td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td>
-                        ${record.status === 0 ? 
-                            `<button class="btn btn-primary" onclick="returnBook(${record.id})">归还</button>` : 
-                            ''}
-                    </td>
-                </tr>
-            `;
-        });
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${record.bookName}</td>
+                        <td>${borrowDate}</td>
+                        <td>${dueDate}</td>
+                        <td>${returnDate}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            ${record.status === 0 ? 
+                                `<button class="btn btn-primary" onclick="returnBook(${record.id})">归还</button>
+                                ${record.renewCount === 0 ? `<button class='btn btn-success' onclick='renewBook(${record.id})'>续借</button>` : ''}` : 
+                                ''}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
     }
 
     // 归还图书
@@ -309,10 +330,34 @@
         }
     }
 
+    // 续借图书
+    function renewBook(recordId) {
+        if (confirm('确定要续借这本图书吗？（每本书仅可续借一次）')) {
+            fetch(`/borrow/renew?id=${recordId}`, {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('续借成功');
+                        loadBorrowRecords();
+                    } else {
+                        alert(data.msg || '续借失败，可能已续借过或记录不存在');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('续借失败');
+                });
+        }
+    }
+
     // 退出登录
     function logout() {
-        sessionStorage.removeItem('user');
-        window.location.href = 'login.html';
+        if (confirm('确定要退出登录吗？')) {
+            sessionStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
     }
 
     // 侧边栏控制

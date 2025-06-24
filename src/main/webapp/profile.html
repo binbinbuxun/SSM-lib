@@ -106,11 +106,11 @@
             gap: 16px;
         }
         .header-title {
-            font-size: 32px;
-            font-weight: 700;
-            letter-spacing: 1px;
             margin: 0 0 0 16px;
-            color: #222;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            line-height: 1.2;
         }
         .user-info {
             display: flex;
@@ -177,31 +177,55 @@
             background: #fff;
         }
         .btn {
-            padding: 12px 24px;
+            padding: 8px 16px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 18px;
             transition: background-color 0.3s;
-            font-weight: 600;
+            font-size: 14px;
         }
         .btn-primary {
             background-color: #007aff;
             color: white;
         }
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
         .btn-danger {
             background-color: #ff3b30;
             color: white;
         }
-        .btn-danger:hover {
-            background-color: #c82333;
+        .btn:hover {
+            opacity: 0.9;
         }
         /* 管理菜单项默认隐藏 */
         .admin-only {
             display: none;
+        }
+        /* 新增：个人信息左右布局 */
+        .profile-flex {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .profile-card {
+            flex: 1 1 340px;
+            max-width: 600px;
+            min-width: 340px;
+            box-sizing: border-box;
+            padding: 48px 40px 40px 40px;
+        }
+        @media (max-width: 900px) {
+            .profile-flex {
+                flex-direction: column;
+                gap: 20px;
+                align-items: center;
+            }
+            .profile-card {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
@@ -211,13 +235,16 @@
     <div class="sidebar" id="sidebar">
         <h2>功能菜单</h2>
         <ul>
-            <li onclick="location.href='main.html'">首页</li>
-            <li onclick="location.href='book.html'">图书列表</li>
-            <li onclick="location.href='borrow.html'">我的借阅</li>
-            <li class="admin-only" onclick="location.href='borrow-manage.html'">借阅管理</li>
-            <li class="admin-only" onclick="location.href='user.html'">用户管理</li>
-            <li class="admin-only" onclick="location.href='notice.html'">公告管理</li>
-            <li class="active" onclick="location.href='profile.html'">个人信息</li>
+            <li onclick="location.href='main.html'">🏠 首页</li>
+            <li onclick="location.href='book.html'">📚 图书列表</li>
+            <li onclick="location.href='borrow.html'">📖 我的借阅</li>
+            <li onclick="location.href='bookshelf.html'">⭐ 我的书架</li>
+            <li onclick="location.href='message.html'">🔔 个人消息</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='message-manage.html'">📝 消息管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='borrow-manage.html'">🗂️ 借阅管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='user.html'">👥 用户管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='notice.html'">📢 公告管理</li>
+            <li class="active" onclick="location.href='profile.html'">🙍‍♂️ 个人信息</li>
         </ul>
     </div>
     <div class="container">
@@ -231,10 +258,10 @@
                 <button class="btn btn-danger" onclick="logout()">退出登录</button>
             </div>
         </div>
-        <div class="content">
+        <div class="content profile-flex">
             <div class="alert alert-success" id="success-alert"></div>
             <div class="alert alert-danger" id="error-alert"></div>
-            <div class="card">
+            <div class="card profile-card">
                 <h3 class="card-title">基本信息</h3>
                 <form id="profile-form">
                     <div class="form-group">
@@ -256,7 +283,7 @@
                     <button type="submit" class="btn btn-primary">保存修改</button>
                 </form>
             </div>
-            <div class="card">
+            <div class="card profile-card">
                 <h3 class="card-title">修改密码</h3>
                 <form id="password-form">
                     <div class="form-group">
@@ -349,14 +376,31 @@
     // 修改密码
     document.getElementById('password-form').addEventListener('submit', function(e) {
         e.preventDefault();
+        const oldPassword = document.getElementById('old-password').value;
         const newPassword = document.getElementById('new-password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
+        if (!oldPassword) {
+            showError('请输入原密码');
+            return;
+        }
+        if (!newPassword) {
+            showError('请输入新密码');
+            return;
+        }
+        if (!confirmPassword) {
+            showError('请确认新密码');
+            return;
+        }
         if (newPassword !== confirmPassword) {
             showError('两次输入的密码不一致');
             return;
         }
+        if (oldPassword === newPassword) {
+            showError('新密码不能与原密码相同');
+            return;
+        }
         const formData = {
-            oldPassword: document.getElementById('old-password').value,
+            oldPassword: oldPassword,
             newPassword: newPassword
         };
         fetch('/user/password', {
@@ -372,7 +416,14 @@
                 showSuccess('密码修改成功');
                 document.getElementById('password-form').reset();
             } else {
-                showError(data.msg);
+                // 针对后端返回的常见错误信息做更友好的提示
+                if (data.msg && data.msg.indexOf('旧密码错误') !== -1) {
+                    showError('原密码不正确');
+                } else if (data.msg && data.msg.indexOf('参数不完整') !== -1) {
+                    showError('请填写完整信息');
+                } else {
+                    showError(data.msg || '密码修改失败');
+                }
             }
         })
         .catch(error => {
@@ -381,21 +432,11 @@
     });
     // 显示成功消息
     function showSuccess(message) {
-        const alert = document.getElementById('success-alert');
-        alert.textContent = message;
-        alert.style.display = 'block';
-        setTimeout(() => {
-            alert.style.display = 'none';
-        }, 3000);
+        alert(message);
     }
     // 显示错误消息
     function showError(message) {
-        const alert = document.getElementById('error-alert');
-        alert.textContent = message;
-        alert.style.display = 'block';
-        setTimeout(() => {
-            alert.style.display = 'none';
-        }, 3000);
+        alert(message);
     }
     // 侧边栏控制
     function openSidebar() {
@@ -419,8 +460,10 @@
     });
     // 退出登录
     function logout() {
-        sessionStorage.removeItem('user');
-        window.location.href = 'login.html';
+        if (confirm('确定要退出登录吗？')) {
+            sessionStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
     }
 </script>
 </body>

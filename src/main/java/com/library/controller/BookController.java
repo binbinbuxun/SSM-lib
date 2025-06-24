@@ -95,9 +95,14 @@ public class BookController {
     @DeleteMapping("/{id}")
     public Map<String, Object> deleteBook(@PathVariable Integer id) {
         Map<String, Object> result = new HashMap<>();
-        boolean success = bookService.deleteBook(id);
-        result.put("success", success);
-        result.put("msg", success ? "删除成功" : "删除失败");
+        try {
+            boolean success = bookService.deleteBook(id);
+            result.put("success", success);
+            result.put("msg", success ? "删除成功" : "删除失败");
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("msg", e.getMessage());
+        }
         return result;
     }
 
