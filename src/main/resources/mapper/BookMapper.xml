@@ -101,4 +101,32 @@
     <select id="getMaxBookNumberByPrefix" resultType="java.lang.String">
         SELECT MAX(book_number) FROM book WHERE book_number LIKE CONCAT(#{prefix}, '%')
     </select>
+
+    <!-- 新书上架榜：近90天上架且借阅次数多，前5 -->
+    <select id="getNewBooksRank" resultMap="BookResultMap">
+        SELECT b.*, IFNULL(br.borrow_count,0) AS borrowCount
+        FROM book b
+        LEFT JOIN (
+            SELECT book_id, COUNT(*) AS borrow_count
+            FROM borrow_record
+            GROUP BY book_id
+        ) br ON b.id = br.book_id
+        WHERE b.create_time >= DATE_SUB(NOW(), INTERVAL 90 DAY)
+        ORDER BY borrowCount DESC, b.create_time DESC
+        LIMIT 5
+    </select>
+
+    <!-- 分类榜单：每个分类下借阅次数最多的前5本书（MySQL 8.0+支持窗口函数） -->
+    <select id="getCategoryRank" resultMap="BookResultMap">
+        SELECT * FROM (
+            SELECT b.*, IFNULL(br.borrow_count,0) AS borrowCount,
+                   ROW_NUMBER() OVER(PARTITION BY b.category ORDER BY IFNULL(br.borrow_count,0) DESC, b.create_time DESC) AS rn
+            FROM book b
+            LEFT JOIN (
+                SELECT book_id, COUNT(*) AS borrow_count FROM borrow_record GROUP BY book_id
+            ) br ON b.id = br.book_id
+        ) t
+        WHERE t.rn &lt;= 5
+        ORDER BY t.category, t.rn
+    </select>
 </mapper>

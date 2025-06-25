@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.library.dao.FavoriteMapper">
+    <resultMap id="FavoriteMap" type="com.library.entity.Favorite">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="bookId" column="book_id"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <insert id="addFavorite">
+        INSERT INTO favorite (user_id, book_id, create_time)
+        VALUES (#{userId}, #{bookId}, NOW())
+        ON DUPLICATE KEY UPDATE create_time = NOW()
+    </insert>
+
+    <delete id="removeFavorite">
+        DELETE FROM favorite WHERE user_id = #{userId} AND book_id = #{bookId}
+    </delete>
+
+    <select id="getFavoritesByUserId" resultMap="FavoriteMap">
+        SELECT * FROM favorite WHERE user_id = #{userId} ORDER BY create_time DESC
+    </select>
+
+    <select id="getFavorite" resultMap="FavoriteMap">
+        SELECT * FROM favorite WHERE user_id = #{userId} AND book_id = #{bookId} LIMIT 1
+    </select>
+</mapper> 

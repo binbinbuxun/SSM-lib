@@ -6,6 +6,7 @@ import com.library.entity.BorrowRecord;
 import com.library.entity.Book;
 import com.library.service.BorrowRecordService;
 import com.library.service.MessageService;
+import com.library.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -146,13 +147,13 @@ public class BorrowRecordServiceImpl implements BorrowRecordService {
     public boolean renewBorrowRecord(int borrowRecordId) {
         BorrowRecord record = borrowRecordMapper.getBorrowRecordById(borrowRecordId);
         if (record == null) {
-            throw new RuntimeException("借阅记录不存在");
+            throw new BusinessException("借阅记录不存在");
         }
         if (record.getRenewCount() != 0) {
-            throw new RuntimeException("该图书已续借过一次，不能再次续借");
+            throw new BusinessException("该图书已续借过一次，不能再次续借");
         }
         if (record.getStatus() != 0) {
-            throw new RuntimeException("该图书已归还，不能续借");
+            throw new BusinessException("该图书已归还，不能续借");
         }
         // 计算新的到期时间（在原dueDate基础上延长30天）
         Date oldDueDate = record.getDueDate();
@@ -166,18 +167,18 @@ public class BorrowRecordServiceImpl implements BorrowRecordService {
     }
 
     /**
-     * 每天凌晨2点检查借阅到期提醒（7天、3天）
+     * 用户行为触发：检查当前用户的借阅到期提醒（7天/3天）
      */
-    @Scheduled(cron = "0 0 2 * * ?")
-    public void checkDueReminders() {
-        List<BorrowRecord> all = borrowRecordMapper.getAllUnreturned();
+    public void checkDueRemindersForUser(Integer userId) {
+        List<BorrowRecord> currentBorrows = borrowRecordMapper.getCurrentBorrowRecordsByUserId(userId);
         Date now = new Date();
-        for (BorrowRecord record : all) {
-            if (record.getDueDate() == null || record.getStatus() != 0) continue;
+        for (BorrowRecord record : currentBorrows) {
+            if (record.getDueDate() == null) continue;
             long days = (record.getDueDate().getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-            if (days == 7 || days == 3) {
-                String msg = String.format("您借阅的《%s》还有%d天到期，请及时归还。", record.getBookName(), days);
-                messageService.sendMessage(record.getUserId(), msg, "SYSTEM");
+            if ((days == 7 || days == 3)) {
+                // 可选：防止重复推送（如消息表已存在该提醒）
+                String content = String.format("您借阅的《%s》还有%d天到期，请及时归还。", record.getBookName(), days);
+                messageService.sendMessage(record.getUserId(), content, "SYSTEM");
             }
         }
     }

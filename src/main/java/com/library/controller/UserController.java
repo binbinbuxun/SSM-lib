@@ -3,6 +3,7 @@ package com.library.controller;
 import com.library.annotation.RequireAdmin;
 import com.library.entity.User;
 import com.library.service.UserService;
+import com.library.service.BorrowRecordService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,9 @@ import java.util.Map;
 public class UserController {
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private BorrowRecordService borrowRecordService;
 
     @RequireAdmin
     @GetMapping("/list")
@@ -76,6 +80,7 @@ public class UserController {
         User loginUser = userService.login(user.getUsername(), user.getPassword());
         if (loginUser != null) {
             session.setAttribute("user", loginUser);
+            borrowRecordService.checkDueRemindersForUser(loginUser.getId());
             result.put("success", true);
             result.put("data", loginUser);
             result.put("role", loginUser.getRole());
@@ -173,6 +178,15 @@ public class UserController {
         }
         result.put("success", success);
         result.put("msg", success ? "密码修改成功" : "密码修改失败");
+        return result;
+    }
+
+    @GetMapping("/borrow-rank")
+    public Map<String, Object> getUserBorrowRank() {
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> rankList = userService.getUserBorrowRank(5);
+        result.put("success", true);
+        result.put("data", rankList);
         return result;
     }
 }

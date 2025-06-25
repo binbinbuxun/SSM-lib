@@ -20,4 +20,7 @@ public interface UserService {
     boolean register(User user);
 
     boolean updateUserProfile(User user);
+
+    // 借阅排行榜
+    List<java.util.Map<String, Object>> getUserBorrowRank(int limit);
 }

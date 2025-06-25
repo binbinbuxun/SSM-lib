@@ -166,6 +166,17 @@
         .btn:hover {
             opacity: 0.9;
         }
+        .btn.btn-danger {
+            background-color: #ff3b30;
+            color: #fff;
+            padding: 8px 16px;
+            font-size: 16px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(255,59,48,0.08);
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
     </style>
 </head>
 <body>
@@ -176,9 +187,10 @@
         <ul>
             <li onclick="location.href='main.html'">🏠 首页</li>
             <li onclick="location.href='book.html'">📚 图书列表</li>
+            <li onclick="location.href='rank.html'">🏆 排行榜</li>
             <li onclick="location.href='borrow.html'">📖 我的借阅</li>
             <li onclick="location.href='bookshelf.html'">⭐ 我的书架</li>
-            <li onclick="location.href='message.html'">🔔 个人消息</li>
+            <li onclick="location.href='message.html'">📨 消息中心</li>
             <li class="admin-only" style="display:none;" onclick="location.href='message-manage.html'">📝 消息管理</li>
             <li class="admin-only" style="display:none;" onclick="location.href='borrow-manage.html'">🗂️ 借阅管理</li>
             <li class="admin-only" style="display:none;" onclick="location.href='user.html'">👥 用户管理</li>

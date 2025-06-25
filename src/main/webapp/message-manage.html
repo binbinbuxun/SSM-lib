@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>消息管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; background-color: #f0f2f5; }
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 240px; background-color: #007aff; color: white; padding: 20px 0; box-shadow: 2px 0 5px rgba(0,0,0,0.1); position: fixed; left: 0; top: 0; height: 100vh; z-index: 1000; transform: translateX(-100%); transition: transform 0.3s; border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
+        .sidebar.open { transform: translateX(0); }
+        .sidebar h2 { margin-top: 0; font-size: 18px; text-align: center; }
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar ul li { padding: 14px 30px; cursor: pointer; transition: background-color 0.3s; }
+        .sidebar ul li:hover { background-color: rgba(255,255,255,0.1); }
+        .sidebar ul li.active { background-color: rgba(255,255,255,0.2); }
+        .sidebar .close-btn { display: none; }
+        .sidebar-mask { display: none; position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); z-index: 999; }
+        .sidebar-mask.open { display: block; }
+        .sidebar-toggle-btn { margin-right: 18px; background: #007aff; color: #fff; border: none; border-radius: 4px; padding: 8px 14px; font-size: 18px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .container { flex: 1; margin-left: 0; padding: 40px 20px 20px 20px; background-color: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); min-width: 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header-title { margin: 0 0 0 16px; font-size: 28px; font-weight: 600; letter-spacing: 1px; line-height: 1.2; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .message-center-panel {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 36px 32px 32px 32px;
+        }
+        .manage-panel h3 { margin-top: 0; font-size: 22px; margin-bottom: 18px; }
+        .form-group { margin-bottom: 22px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #333; font-size: 18px; }
+        .form-group textarea { width: 100%; min-height: 80px; border-radius: 6px; border: 1px solid #ccc; padding: 10px; font-size: 18px; resize: vertical; }
+        .btn { padding: 12px 32px; border: none; border-radius: 6px; cursor: pointer; background: #007aff; color: #fff; font-size: 18px; transition: background 0.3s; }
+        .btn:disabled { background: #bbb; cursor: not-allowed; }
+        .result-msg { margin-top: 18px; font-size: 18px; color: #007aff; }
+        #user-select-group label { font-size: 18px !important; }
+        #user-select, #msg-content, #send-btn { font-size: 18px !important; }
+        .btn.btn-danger {
+            background-color: #ff3b30;
+            color: #fff;
+            padding: 8px 16px;
+            font-size: 16px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(255,59,48,0.08);
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .btn.btn-danger:hover {
+            background-color: #d90000;
+            box-shadow: 0 4px 16px rgba(255,59,48,0.15);
+        }
+        .message-card {
+            background: #fffbe6;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            padding: 18px 24px 14px 24px;
+            margin-bottom: 18px;
+            border: 1px solid #ffe58f;
+            position: relative;
+        }
+        .message-card .meta {
+            color: #888;
+            font-size: 15px;
+            margin-bottom: 6px;
+        }
+        .message-card .content {
+            font-size: 17px;
+            margin-bottom: 8px;
+        }
+        .message-card .read-flag {
+            position: absolute;
+            right: 24px;
+            top: 18px;
+            font-size: 14px;
+            color: #007aff;
+        }
+        .filter-bar {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 18px;
+            align-items: center;
+        }
+        .filter-bar input, .filter-bar select {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin-top: 18px;
+        }
+        .pagination button {
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: none;
+            background: #007aff;
+            color: #fff;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .pagination button:disabled {
+            background: #bbb;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <div class="sidebar-mask" id="sidebar-mask" onclick="closeSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+        <h2>功能菜单</h2>
+        <ul>
+            <li onclick="location.href='main.html'">🏠 首页</li>
+            <li onclick="location.href='book.html'">📚 图书列表</li>
+            <li onclick="location.href='rank.html'">🏆 排行榜</li>
+            <li onclick="location.href='borrow.html'">📖 我的借阅</li>
+            <li onclick="location.href='bookshelf.html'">⭐ 我的书架</li>
+            <li onclick="location.href='message.html'">📨 消息中心</li>
+            <li class="admin-only active" style="display:none;" onclick="location.href='message-manage.html'">📝 消息管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='borrow-manage.html'">🗂️ 借阅管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='user.html'">👥 用户管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='notice.html'">📢 公告管理</li>
+            <li onclick="location.href='profile.html'">🙍‍♂️ 个人信息</li>
+        </ul>
+    </div>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <button class="sidebar-toggle-btn" onclick="openSidebar()">☰ 菜单</button>
+                <h1 class="header-title">消息管理</h1>
+            </div>
+            <div class="user-info">
+                <span>欢迎您，<span id="username">管理员</span></span>
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="content">
+            <div class="message-center-panel">
+                <h3>发送消息</h3>
+                <div class="form-group">
+                    <label for="user-select">选择接收用户</label>
+                    <div id="user-select-group" style="max-height:180px;overflow-y:auto;border:1px solid #eee;padding:10px 8px 6px 8px;border-radius:6px;background:#fafbfc;margin-bottom:12px;"></div>
+                    <label style="font-size:14px;color:#888;"><input type="checkbox" id="select-all" style="margin-right:6px;">全选</label>
+                </div>
+                <div class="form-group">
+                    <label for="msg-content">消息内容</label>
+                    <textarea id="msg-content" placeholder="请输入要发送的消息内容"></textarea>
+                </div>
+                <button class="btn" id="send-btn" onclick="sendMessage()">发送</button>
+                <div class="result-msg" id="result-msg"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+window.onload = function() {
+    const userInfoStr = sessionStorage.getItem('user');
+    if (!userInfoStr) {
+        alert('请先登录');
+        window.location.href = 'login.html';
+        return;
+    }
+    const userInfo = JSON.parse(userInfoStr);
+    document.getElementById('username').textContent = userInfo.username;
+    // 仅管理员可访问
+    if (userInfo.role !== 'ADMIN') {
+        alert('无权限访问');
+        window.location.href = 'main.html';
+        return;
+    }
+    // 显示管理菜单
+    const adminOnlyElements = document.getElementsByClassName('admin-only');
+    for (let element of adminOnlyElements) {
+        element.style.display = 'block';
+    }
+    loadUserList();
+};
+
+async function loadUserList() {
+    const group = document.getElementById('user-select-group');
+    group.innerHTML = '<span style="color:#888;">正在加载用户...</span>';
+    try {
+        const resp = await fetch('/user/list');
+        const data = await resp.json();
+        if (data.success && Array.isArray(data.data)) {
+            group.innerHTML = '';
+            data.data.forEach(u => {
+                const label = document.createElement('label');
+                label.style.display = 'inline-block';
+                label.style.marginRight = '18px';
+                label.style.marginBottom = '8px';
+                label.style.fontSize = '18px';
+                label.innerHTML = `<input type="checkbox" class="user-checkbox" value="${u.id}"> ${u.username}`;
+                group.appendChild(label);
+            });
+        } else {
+            group.innerHTML = '<span style="color:#888;">用户加载失败</span>';
+        }
+    } catch (e) {
+        group.innerHTML = '<span style="color:#888;">用户加载失败</span>';
+    }
+    // 全选功能
+    document.getElementById('select-all').onclick = function() {
+        const checked = this.checked;
+        document.querySelectorAll('.user-checkbox').forEach(cb => { cb.checked = checked; });
+    };
+}
+
+async function sendMessage() {
+    const content = document.getElementById('msg-content').value.trim();
+    const resultMsg = document.getElementById('result-msg');
+    const checkedUsers = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.value);
+    if (!content) {
+        resultMsg.textContent = '消息内容不能为空！';
+        return;
+    }
+    if (checkedUsers.length === 0) {
+        resultMsg.textContent = '请选择接收用户！';
+        return;
+    }
+    document.getElementById('send-btn').disabled = true;
+    resultMsg.textContent = '正在发送...';
+    try {
+        const resp = await fetch('/message/sendToUsers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userIds: checkedUsers, content, type: 'ADMIN' })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            resultMsg.textContent = data.msg || '发送成功';
+            document.getElementById('msg-content').value = '';
+            document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('select-all').checked = false;
+        } else {
+            resultMsg.textContent = data.msg || '发送失败';
+        }
+    } catch (e) {
+        resultMsg.textContent = '请求失败';
+    }
+    document.getElementById('send-btn').disabled = false;
+}
+
+// 侧边栏控制
+function openSidebar() {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebar-mask').classList.add('open');
+}
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-mask').classList.remove('open');
+}
+document.getElementById('sidebar-mask').addEventListener('click', closeSidebar);
+document.addEventListener('click', function(e) {
+    const sidebar = document.getElementById('sidebar');
+    const sidebarMask = document.getElementById('sidebar-mask');
+    if (sidebar.classList.contains('open')) {
+        if (!sidebar.contains(e.target) && !e.target.classList.contains('sidebar-toggle-btn')) {
+            closeSidebar();
+        }
+    }
+});
+function logout() {
+    if (confirm('确定要退出登录吗？')) {
+        sessionStorage.removeItem('user');
+        window.location.href = 'login.html';
+    }
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+</script>
+</body>
+</html> 

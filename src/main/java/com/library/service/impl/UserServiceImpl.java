@@ -79,4 +79,9 @@ public class UserServiceImpl implements UserService {
     public boolean updateUserProfile(User user) {
         return userMapper.updateUserProfile(user) > 0;
     }
+
+    @Override
+    public List<java.util.Map<String, Object>> getUserBorrowRank(int limit) {
+        return userMapper.getUserBorrowRank(limit);
+    }
 }

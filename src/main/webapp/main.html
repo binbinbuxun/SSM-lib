@@ -83,7 +83,6 @@
         }
         .container {
             flex: 1;
-            margin-left: 0;
             padding: 30px;
             background-color: white;
             border-radius: 10px;
@@ -265,6 +264,60 @@
         .btn:hover {
             opacity: 0.9;
         }
+        .popup-btn {
+            background: #007aff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 22px;
+            font-size: 16px;
+            margin-left: 8px;
+            box-shadow: 0 2px 8px rgba(0,122,255,0.08);
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .popup-btn:hover {
+            background: #005ecb;
+            box-shadow: 0 4px 16px rgba(0,122,255,0.15);
+        }
+        .btn.btn-danger {
+            background-color: #ff3b30;
+            color: #fff;
+            padding: 8px 16px;
+            font-size: 16px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(255,59,48,0.08);
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .latest-message-section {
+            margin-bottom: 36px;
+            width: 100%;
+        }
+        .latest-message-card {
+            background: #fffbe6;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 24px 28px 18px 28px;
+            margin-bottom: 18px;
+            font-size: 18px;
+            color: #222;
+            position: relative;
+        }
+        .latest-message-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #007aff;
+            margin-bottom: 8px;
+        }
+        .latest-message-date {
+            font-size: 14px;
+            color: #888;
+            position: absolute;
+            right: 28px;
+            top: 24px;
+        }
     </style>
 </head>
 <body>
@@ -275,9 +328,10 @@
         <ul>
             <li class="active" onclick="location.href='main.html'">🏠 首页</li>
             <li onclick="location.href='book.html'">📚 图书列表</li>
+            <li onclick="location.href='rank.html'">🏆 排行榜</li>
             <li onclick="location.href='borrow.html'">📖 我的借阅</li>
             <li onclick="location.href='bookshelf.html'">⭐ 我的书架</li>
-            <li onclick="location.href='message.html'">🔔 个人消息</li>
+            <li onclick="location.href='message.html'">📨 消息中心</li>
             <li class="admin-only" style="display:none;" onclick="location.href='message-manage.html'">📝 消息管理</li>
             <li class="admin-only" style="display:none;" onclick="location.href='borrow-manage.html'">🗂️ 借阅管理</li>
             <li class="admin-only" style="display:none;" onclick="location.href='user.html'">👥 用户管理</li>
@@ -299,8 +353,8 @@
         <div id="welcome-title"></div>
         <!-- 公告栏 -->
         <div class="section notice-section">
-            <div class="section-title">公告</div>
-            <div class="notice-flex-row" id="notice-list"></div>
+            <div class="section-title">公告栏</div>
+            <div id="notice-list"></div>
         </div>
         <div class="section-title" style="margin-bottom:32px;">快捷菜单</div>
         <div class="main-cards" style="margin-bottom:36px;">
@@ -332,18 +386,39 @@
             window.location.href = 'login.html';
             return;
         }
-        // 欢迎标题
         document.getElementById('welcome-title').innerText = `欢迎您，${user.username}`;
-        // 根据用户角色显示/隐藏管理菜单
         const adminOnlyElements = document.getElementsByClassName('admin-only');
         if (user.role === 'ADMIN') {
             for (let element of adminOnlyElements) {
                 element.style.display = 'block';
             }
+            // 管理员登录后拉取未读用户反馈
+            fetch('/message/list').then(res => res.json()).then(data => {
+                if (data && data.success && data.data && data.data.length > 0) {
+                    const feedbacks = data.data.filter(m => m.type === 'USER_TO_ADMIN' && !m.readFlag);
+                    if (feedbacks.length > 0) {
+                        showAdminFeedbackPopup(feedbacks);
+                    }
+                }
+            });
         } else {
             for (let element of adminOnlyElements) {
                 element.style.display = 'none';
             }
+            // 普通用户登录后拉取未读消息
+            fetch('/message/list').then(res => res.json()).then(data => {
+                console.log('消息中心返回数据', data); // 调试输出
+                if (data && data.success && data.data && data.data.length > 0) {
+                    data.data.forEach(m => console.log('type:', m.type, 'readFlag:', m.readFlag)); // 新增调试
+                    const unreadMsgs = data.data.filter(m =>
+                        m.readFlag === false || m.readFlag === 0 || m.readFlag === '0' || m.readFlag === null
+                    );
+                    console.log('未读消息', unreadMsgs); // 调试输出
+                    if (unreadMsgs.length > 0) {
+                        showUserMessagePopup(unreadMsgs);
+                    }
+                }
+            });
         }
         loadNotices();
         loadTopBooks();
@@ -467,6 +542,63 @@
             }
         }
     });
+    // 管理员右下角弹窗提醒用户反馈
+    function showAdminFeedbackPopup(feedbacks) {
+        if (document.getElementById('admin-feedback-popup')) return;
+        let msgHtml = feedbacks.map(m => `<div style='margin-bottom:8px;'><b>用户ID:${m.fromUserId || '-'}：</b>${m.content}</div>`).join('');
+        let popup = document.createElement('div');
+        popup.id = 'admin-feedback-popup';
+        popup.style = 'position:fixed;right:30px;bottom:30px;z-index:9999;background:#fff;border:2px solid #ff3b30;padding:22px 32px;box-shadow:0 2px 12px #aaa;border-radius:10px;min-width:320px;max-width:420px;font-size:16px;opacity:0;transform:translateY(30px);transition:opacity 0.5s, transform 0.5s;';
+        popup.innerHTML = `
+            <div style='font-weight:bold;margin-bottom:10px;color:#ff3b30;font-size:18px;'>有新的用户反馈/建议</div>
+            ${msgHtml}
+            <div style='text-align:right;margin-top:10px;'>
+                <button class="popup-btn" onclick="fadeOutAndRemove('admin-feedback-popup')">关闭</button>
+                <button class="popup-btn" onclick="window.location.href='message.html'" style='margin-left:8px;'>查看全部</button>
+            </div>
+        `;
+        document.body.appendChild(popup);
+        setTimeout(() => {
+            popup.style.opacity = '1';
+            popup.style.transform = 'translateY(0)';
+        }, 10);
+        // 自动消失（可选，10秒）
+        setTimeout(() => {
+            fadeOutAndRemove('admin-feedback-popup');
+        }, 10000);
+    }
+    // 新增：普通用户未读消息弹窗提醒
+    function showUserMessagePopup(msgs) {
+        if (document.getElementById('user-message-popup')) return;
+        let latest = msgs[0];
+        let popup = document.createElement('div');
+        popup.id = 'user-message-popup';
+        popup.style = 'position:fixed;right:30px;bottom:30px;z-index:9999;background:#fff;border:2px solid #007aff;padding:22px 32px;box-shadow:0 2px 12px #aaa;border-radius:10px;min-width:320px;max-width:420px;font-size:16px;opacity:0;transform:translateY(30px);transition:opacity 0.5s, transform 0.5s;';
+        popup.innerHTML = `
+            <div style='font-weight:bold;margin-bottom:10px;color:#007aff;font-size:18px;'>您有新的未读消息</div>
+            <div style='margin-bottom:8px;'>${latest.content}</div>
+            <div style='text-align:right;margin-top:10px;'>
+                <button class="popup-btn" onclick="fadeOutAndRemove('user-message-popup')">关闭</button>
+                <button class="popup-btn" onclick="window.location.href='message.html'" style='margin-left:8px;'>去查看</button>
+            </div>
+        `;
+        document.body.appendChild(popup);
+        setTimeout(() => {
+            popup.style.opacity = '1';
+            popup.style.transform = 'translateY(0)';
+        }, 10);
+        setTimeout(() => {
+            fadeOutAndRemove('user-message-popup');
+        }, 10000);
+    }
+    function fadeOutAndRemove(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            setTimeout(() => { el.remove(); }, 500);
+        }
+    }
 </script>
 </body>
 </html> 

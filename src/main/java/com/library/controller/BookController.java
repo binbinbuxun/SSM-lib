@@ -116,4 +116,24 @@ public class BookController {
         result.put("data", nextNumber);
         return result;
     }
+
+    // 新书上架榜
+    @GetMapping("/new-rank")
+    public Map<String, Object> getNewBooksRank() {
+        Map<String, Object> result = new HashMap<>();
+        List<Book> books = bookService.getNewBooksRank();
+        result.put("success", true);
+        result.put("data", books);
+        return result;
+    }
+
+    // 分类榜单
+    @GetMapping("/category-rank")
+    public Map<String, Object> getCategoryRank() {
+        Map<String, Object> result = new HashMap<>();
+        List<Book> books = bookService.getCategoryRank();
+        result.put("success", true);
+        result.put("data", books);
+        return result;
+    }
 }

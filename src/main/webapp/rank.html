@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书管理系统 - 排行榜</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 240px;
+            background-color: #007aff;
+            color: white;
+            padding: 20px 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+            border-top-right-radius: 16px;
+            border-bottom-right-radius: 16px;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .sidebar h2 {
+            margin-top: 0;
+            font-size: 18px;
+            text-align: center;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            padding: 14px 30px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .sidebar ul li:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .sidebar ul li.active {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .sidebar .close-btn {
+            display: none;
+        }
+        .sidebar-mask {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.2);
+            z-index: 999;
+        }
+        .sidebar-mask.open {
+            display: block;
+        }
+        .sidebar-toggle-btn {
+            margin-right: 18px;
+            background: #007aff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 14px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .container {
+            flex: 1;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-width: 0;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tab-bar {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+        .tab-btn {
+            padding: 8px 24px;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            background: #f5f6fa;
+            color: #007aff;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .tab-btn.active {
+            background: #fff;
+            color: #007aff;
+            border-bottom: 2px solid #007aff;
+        }
+        .rank-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .rank-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 18px;
+        }
+        .rank-index {
+            font-size: 22px;
+            font-weight: bold;
+            width: 38px;
+            text-align: center;
+        }
+        .rank-index.top1 { color: #ff9500; }
+        .rank-index.top2 { color: #007aff; }
+        .rank-index.top3 { color: #30d158; }
+        .rank-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .book-title, .user-title {
+            font-size: 20px;
+            font-weight: 500;
+        }
+        .book-author, .user-detail {
+            font-size: 15px;
+            color: #888;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+        }
+        .btn-danger {
+            background-color: #ff3b30;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .btn.btn-danger {
+            background-color: #ff3b30;
+            color: #fff;
+            padding: 8px 16px;
+            font-size: 16px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(255,59,48,0.08);
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        @media (min-width: 700px) {
+            .container {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <div class="sidebar-mask" id="sidebar-mask" onclick="closeSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+        <h2>功能菜单</h2>
+        <ul>
+            <li onclick="location.href='main.html'">🏠 首页</li>
+            <li onclick="location.href='book.html'">📚 图书列表</li>
+            <li class="active" onclick="location.href='rank.html'">🏆 排行榜</li>
+            <li onclick="location.href='borrow.html'">📖 我的借阅</li>
+            <li onclick="location.href='bookshelf.html'">⭐ 我的书架</li>
+            <li onclick="location.href='message.html'">📨 消息中心</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='message-manage.html'">📝 消息管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='borrow-manage.html'">🗂️ 借阅管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='user.html'">👥 用户管理</li>
+            <li class="admin-only" style="display:none;" onclick="location.href='notice.html'">📢 公告管理</li>
+            <li onclick="location.href='profile.html'">🙍‍♂️ 个人信息</li>
+        </ul>
+    </div>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <button class="sidebar-toggle-btn" onclick="openSidebar()">☰ 菜单</button>
+                <h1 class="header-title">排行榜</h1>
+            </div>
+            <div class="user-info">
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="tab-bar">
+            <button class="tab-btn active" id="tab-book" onclick="switchTab('book')">图书借阅榜</button>
+            <button class="tab-btn" id="tab-user" onclick="switchTab('user')">用户借阅榜</button>
+            <button class="tab-btn" id="tab-new" onclick="switchTab('new')">新书上架榜</button>
+            <button class="tab-btn" id="tab-category" onclick="switchTab('category')">分类榜单</button>
+        </div>
+        <div id="tab-content-book">
+            <ul class="rank-list" id="book-rank-list"></ul>
+        </div>
+        <div id="tab-content-user" style="display:none;">
+            <ul class="rank-list" id="user-rank-list"></ul>
+        </div>
+        <div id="tab-content-new" style="display:none;">
+            <ul class="rank-list" id="newbook-rank-list"></ul>
+        </div>
+        <div id="tab-content-category" style="display:none;">
+            <div id="category-rank-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    window.onload = function() {
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        const adminOnlyElements = document.getElementsByClassName('admin-only');
+        if (user.role === 'ADMIN') {
+            for (let element of adminOnlyElements) {
+                element.style.display = 'block';
+            }
+        } else {
+            for (let element of adminOnlyElements) {
+                element.style.display = 'none';
+            }
+        }
+        loadBookRank();
+        loadUserRank();
+        loadNewBookRank();
+        loadCategoryRank();
+    };
+    function switchTab(tab) {
+        document.getElementById('tab-book').classList.remove('active');
+        document.getElementById('tab-user').classList.remove('active');
+        document.getElementById('tab-new').classList.remove('active');
+        document.getElementById('tab-category').classList.remove('active');
+        document.getElementById('tab-content-book').style.display = 'none';
+        document.getElementById('tab-content-user').style.display = 'none';
+        document.getElementById('tab-content-new').style.display = 'none';
+        document.getElementById('tab-content-category').style.display = 'none';
+        if (tab === 'book') {
+            document.getElementById('tab-book').classList.add('active');
+            document.getElementById('tab-content-book').style.display = '';
+        } else if (tab === 'user') {
+            document.getElementById('tab-user').classList.add('active');
+            document.getElementById('tab-content-user').style.display = '';
+        } else if (tab === 'new') {
+            document.getElementById('tab-new').classList.add('active');
+            document.getElementById('tab-content-new').style.display = '';
+        } else if (tab === 'category') {
+            document.getElementById('tab-category').classList.add('active');
+            document.getElementById('tab-content-category').style.display = '';
+        }
+    }
+    function loadBookRank() {
+        fetch('/borrow/top-books')
+            .then(res => res.json())
+            .then(data => {
+                let books = Array.isArray(data) ? data : (data.data || []);
+                renderBookRank(books);
+            })
+            .catch(() => {
+                document.getElementById('book-rank-list').innerHTML = '<li>加载失败</li>';
+            });
+    }
+    function renderBookRank(books) {
+        const list = document.getElementById('book-rank-list');
+        list.innerHTML = '';
+        books.forEach((book, idx) => {
+            const li = document.createElement('li');
+            li.className = 'rank-item';
+            let rankClass = idx === 0 ? 'top1' : idx === 1 ? 'top2' : idx === 2 ? 'top3' : '';
+            li.innerHTML = `
+                <span class="rank-index ${rankClass}">${idx + 1}</span>
+                <div class="rank-info">
+                    <span class="book-title">${book.name}</span>
+                    <span class="book-author">作者：${book.author || '-'} | 分类：${book.category || '-'} <span style="margin-left:12px;color:#ff9500;font-weight:600;">借阅次数：${book.borrowCount || 0}</span></span>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+        if (books.length === 0) {
+            list.innerHTML = '<li>暂无数据</li>';
+        }
+    }
+    function loadUserRank() {
+        fetch('/user/borrow-rank')
+            .then(res => res.json())
+            .then(data => {
+                let users = Array.isArray(data) ? data : (data.data || []);
+                renderUserRank(users);
+            })
+            .catch(() => {
+                document.getElementById('user-rank-list').innerHTML = '<li>加载失败</li>';
+            });
+    }
+    function renderUserRank(users) {
+        const list = document.getElementById('user-rank-list');
+        list.innerHTML = '';
+        users.forEach((user, idx) => {
+            const li = document.createElement('li');
+            li.className = 'rank-item';
+            let rankClass = idx === 0 ? 'top1' : idx === 1 ? 'top2' : idx === 2 ? 'top3' : '';
+            li.innerHTML = `
+                <span class="rank-index ${rankClass}">${idx + 1}</span>
+                <div class="rank-info">
+                    <span class="user-title">${user.username}</span>
+                    <span class="user-detail">借阅数量：${user.borrowCount || 0}</span>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+        if (users.length === 0) {
+            list.innerHTML = '<li>暂无数据</li>';
+        }
+    }
+    function logout() {
+        if (confirm('确定要退出登录吗？')) {
+            sessionStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+    }
+    // 新书上架榜
+    function loadNewBookRank() {
+        fetch('/book/new-rank')
+            .then(res => res.json())
+            .then(data => {
+                let books = Array.isArray(data) ? data : (data.data || []);
+                renderNewBookRank(books);
+            })
+            .catch(() => {
+                document.getElementById('newbook-rank-list').innerHTML = '<li>加载失败</li>';
+            });
+    }
+    function renderNewBookRank(books) {
+        const list = document.getElementById('newbook-rank-list');
+        list.innerHTML = '';
+        books.forEach((book, idx) => {
+            const li = document.createElement('li');
+            li.className = 'rank-item';
+            let rankClass = idx === 0 ? 'top1' : idx === 1 ? 'top2' : idx === 2 ? 'top3' : '';
+            li.innerHTML = `
+                <span class="rank-index ${rankClass}">${idx + 1}</span>
+                <div class="rank-info">
+                    <span class="book-title">${book.name}</span>
+                    <span class="book-author">作者：${book.author || '-'} | 分类：${book.category || '-'} | 上架时间：${book.createTime ? (new Date(book.createTime)).toLocaleDateString() : '-'} <span style="margin-left:12px;color:#ff9500;font-weight:600;">借阅次数：${book.borrowCount || 0}</span></span>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+        if (books.length === 0) {
+            list.innerHTML = '<li>暂无数据</li>';
+        }
+    }
+    // 分类榜单
+    function loadCategoryRank() {
+        fetch('/book/category-rank')
+            .then(res => res.json())
+            .then(data => {
+                let books = Array.isArray(data) ? data : (data.data || []);
+                renderCategoryRank(books);
+            })
+            .catch(() => {
+                document.getElementById('category-rank-container').innerHTML = '<li>加载失败</li>';
+            });
+    }
+    function renderCategoryRank(books) {
+        const container = document.getElementById('category-rank-container');
+        container.innerHTML = '';
+        if (!books || books.length === 0) {
+            container.innerHTML = '<li>暂无数据</li>';
+            return;
+        }
+        // 按分类分组
+        let group = {};
+        books.forEach(book => {
+            if (!group[book.category]) group[book.category] = [];
+            group[book.category].push(book);
+        });
+        Object.keys(group).forEach(category => {
+            let div = document.createElement('div');
+            div.style.marginBottom = '28px';
+            div.innerHTML = `<div class='section-title' style='margin-bottom:10px;'>${category}</div>`;
+            let ul = document.createElement('ul');
+            ul.className = 'rank-list';
+            group[category].forEach((book, idx) => {
+                let li = document.createElement('li');
+                li.className = 'rank-item';
+                let rankClass = idx === 0 ? 'top1' : idx === 1 ? 'top2' : idx === 2 ? 'top3' : '';
+                li.innerHTML = `
+                    <span class="rank-index ${rankClass}">${idx + 1}</span>
+                    <div class="rank-info">
+                        <span class="book-title">${book.name}</span>
+                        <span class="book-author">作者：${book.author || '-'} | 上架时间：${book.createTime ? (new Date(book.createTime)).toLocaleDateString() : '-'} <span style="margin-left:12px;color:#ff9500;font-weight:600;">借阅次数：${book.borrowCount || 0}</span></span>
+                    </div>
+                `;
+                ul.appendChild(li);
+            });
+            div.appendChild(ul);
+            container.appendChild(div);
+        });
+    }
+    // 侧边栏控制
+    function openSidebar() {
+        document.getElementById('sidebar').classList.add('open');
+        document.getElementById('sidebar-mask').classList.add('open');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-mask').classList.remove('open');
+    }
+    document.getElementById('sidebar-mask').addEventListener('click', closeSidebar);
+    document.addEventListener('click', function(e) {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarMask = document.getElementById('sidebar-mask');
+        if (sidebar.classList.contains('open')) {
+            if (!sidebar.contains(e.target) && !e.target.classList.contains('sidebar-toggle-btn')) {
+                closeSidebar();
+            }
+        }
+    });
+</script>
+</body>
+</html> 

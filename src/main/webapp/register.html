@@ -276,62 +276,43 @@
 </div>
 
 <script>
-    document.getElementById('register-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-
+    // 校验规则
+    function validateRegisterForm() {
         const username = document.getElementById('register-username').value.trim();
         const password = document.getElementById('register-password').value;
         const age = document.getElementById('register-age').value;
         const gender = document.getElementById('register-gender').value;
-
-        // 简单前端校验
         let valid = true;
         const feedbacks = document.querySelectorAll('.validation-feedback');
         feedbacks.forEach(fb => fb.textContent = '');
-
+        // 用户名校验：4-16位，仅字母数字下划线
         if (!username) {
             feedbacks[0].textContent = '请输入用户名';
             valid = false;
+        } else if (!/^\w{4,16}$/.test(username)) {
+            feedbacks[0].textContent = '用户名需4-16位，仅字母数字下划线';
+            valid = false;
         }
+        // 密码校验：6-20位，必须包含字母和数字
         if (!password) {
             feedbacks[1].textContent = '请输入密码';
             valid = false;
-        }
-        if (!age || isNaN(age) || age <= 0) {
-            feedbacks[2].textContent = '请输入有效年龄';
+        } else if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,20}$/.test(password)) {
+            feedbacks[1].textContent = '密码需6-20位，包含字母和数字';
             valid = false;
         }
+        // 年龄校验：1-120整数
+        if (!age || isNaN(age) || age < 1 || age > 120 || !Number.isInteger(Number(age))) {
+            feedbacks[2].textContent = '请输入1-120之间的整数年龄';
+            valid = false;
+        }
+        // 性别
         if (!gender) {
             feedbacks[3].textContent = '请选择性别';
             valid = false;
         }
-        if (!valid) return;
-
-        // 发送注册请求
-        fetch('/user/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username,
-                password,
-                age: parseInt(age),
-                gender
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('注册成功！请返回登录');
-                window.location.href = 'login.html';
-            } else {
-                alert(data.msg || '注册失败，请重试');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('注册失败，请重试');
-        });
-    });
+        return valid;
+    }
 
     // 验证码相关
     let generatedCaptcha = '';
@@ -361,32 +342,49 @@
         const val = document.getElementById('captcha-input').value.trim();
         if (val.toLowerCase() === generatedCaptcha.toLowerCase()) {
             document.getElementById('captcha-modal').style.display = 'none';
-            submitRegister();
+            doRegister();
         } else {
             document.getElementById('captcha-error').style.display = 'block';
         }
     };
-    // 拦截注册按钮，先弹验证码
-    const regForm = document.querySelector('form');
-    const regBtn = regForm.querySelector('button[type="submit"]');
-    let regFormValid = false;
-    regForm.addEventListener('submit', function(e) {
-        if (!regFormValid) {
-            e.preventDefault();
-            // 先校验表单（可根据你原有校验逻辑调整）
-            let valid = true;
-            regForm.querySelectorAll('input[required]').forEach(input => {
-                if (!input.value.trim()) valid = false;
-            });
-            if (!valid) return;
+
+    // 注册表单提交逻辑
+    document.getElementById('register-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (validateRegisterForm()) {
             showCaptchaModal();
         }
     });
-    // 真正提交注册
-    function submitRegister() {
-        regFormValid = true;
-        regForm.submit();
-        setTimeout(() => { regFormValid = false; }, 1000);
+
+    // 真正注册
+    function doRegister() {
+        const username = document.getElementById('register-username').value.trim();
+        const password = document.getElementById('register-password').value;
+        const age = document.getElementById('register-age').value;
+        const gender = document.getElementById('register-gender').value;
+        fetch('/user/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username,
+                password,
+                age: parseInt(age),
+                gender
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('注册成功！请返回登录');
+                window.location.href = 'login.html';
+            } else {
+                alert(data.msg || '注册失败，请重试');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('注册失败，请重试');
+        });
     }
 </script>
 </body>

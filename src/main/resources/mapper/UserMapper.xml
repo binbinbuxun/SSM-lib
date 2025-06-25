@@ -68,4 +68,17 @@
             update_time = NOW()
         WHERE id = #{id}
     </update>
+
+    <select id="getAllAdmins" resultMap="userMap">
+        SELECT * FROM user WHERE role = 'ADMIN' AND status = 1
+    </select>
+
+    <select id="getUserBorrowRank" resultType="java.util.HashMap">
+        SELECT u.id, u.username, COUNT(br.id) AS borrowCount
+        FROM user u
+        LEFT JOIN borrow_record br ON u.id = br.user_id
+        GROUP BY u.id, u.username
+        ORDER BY borrowCount DESC
+        LIMIT #{limit}
+    </select>
 </mapper>

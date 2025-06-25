@@ -36,4 +36,10 @@ public interface BookService {
 
     // 获取下一个可用的图书序号
     String getNextBookNumber(String category);
+
+    // 新书上架榜
+    List<Book> getNewBooksRank();
+
+    // 分类榜单
+    List<Book> getCategoryRank();
 }

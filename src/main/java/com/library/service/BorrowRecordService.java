@@ -36,4 +36,7 @@ public interface BorrowRecordService {
     List<Book> getTopBorrowedBooks(int limit);
 
     boolean renewBorrowRecord(int borrowRecordId);
+
+    // 用户行为触发：检查当前用户的借阅到期提醒（7天/3天）
+    void checkDueRemindersForUser(Integer userId);
 }

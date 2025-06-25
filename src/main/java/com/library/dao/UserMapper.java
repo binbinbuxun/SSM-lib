@@ -23,4 +23,9 @@ public interface UserMapper {
     User login(@Param("username") String username, @Param("password") String password);
 
     int updateUserProfile(User user);
+
+    List<User> getAllAdmins();
+
+    // 借阅排行榜
+    List<java.util.Map<String, Object>> getUserBorrowRank(@Param("limit") int limit);
 }

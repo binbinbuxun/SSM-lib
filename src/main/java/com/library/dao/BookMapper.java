@@ -37,4 +37,10 @@ public interface BookMapper {
 
     // 查询某分类下最大的图书序号
     String getMaxBookNumberByPrefix(@Param("prefix") String prefix);
+
+    // 新书上架榜
+    List<Book> getNewBooksRank();
+
+    // 分类榜单
+    List<Book> getCategoryRank();
 }

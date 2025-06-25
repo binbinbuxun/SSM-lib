@@ -4,6 +4,7 @@ import com.library.dao.BookMapper;
 import com.library.dao.BorrowRecordMapper;
 import com.library.entity.Book;
 import com.library.service.BookService;
+import com.library.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -42,7 +43,7 @@ public class BookServiceImpl implements BookService {
     public boolean deleteBook(Integer id) {
         int count = borrowRecordMapper.getBorrowCountByBookId(id);
         if (count > 0) {
-            throw new RuntimeException("该图书有借阅记录，无法删除！");
+            throw new BusinessException("该图书有借阅记录，无法删除！");
         }
         return bookMapper.deleteBook(id) > 0;
     }
@@ -99,6 +100,16 @@ public class BookServiceImpl implements BookService {
             } catch (NumberFormatException ignored) {}
         }
         return String.format("%s%03d", prefix, nextNum);
+    }
+
+    @Override
+    public List<Book> getNewBooksRank() {
+        return bookMapper.getNewBooksRank();
+    }
+
+    @Override
+    public List<Book> getCategoryRank() {
+        return bookMapper.getCategoryRank();
     }
 
     // 分类到前缀的映射

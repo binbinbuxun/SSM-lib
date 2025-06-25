@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.library.dao.MessageMapper">
+    <resultMap id="MessageMap" type="com.library.entity.Message">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="content" column="content"/>
+        <result property="type" column="type"/>
+        <result property="createTime" column="create_time"/>
+        <result property="readFlag" column="read_flag"/>
+        <result property="fromUserId" column="from_user_id"/>
+        <result property="parentId" column="parent_id"/>
+    </resultMap>
+
+    <select id="getMessagesByUserId" resultMap="MessageMap">
+        SELECT * FROM message WHERE user_id = #{userId} ORDER BY create_time DESC
+    </select>
+
+    <update id="markAsRead">
+        UPDATE message SET read_flag = 1 WHERE id = #{id}
+    </update>
+
+    <insert id="sendMessage">
+        INSERT INTO message (user_id, content, type, create_time, read_flag, from_user_id)
+        VALUES (#{userId}, #{content}, #{type}, NOW(), 0, #{fromUserId})
+    </insert>
+
+    <!-- 获取当前用户最新一条消息 -->
+    <select id="getLatestMessageByUserId" resultMap="MessageMap">
+        SELECT * FROM message WHERE user_id = #{userId} ORDER BY create_time DESC LIMIT 1
+    </select>
+
+    <!-- 统计某条消息的已读人数 -->
+    <select id="countReadByMessageId" resultType="int">
+        SELECT COUNT(*) FROM message WHERE id = #{messageId} AND read_flag = 1
+    </select>
+</mapper> 
