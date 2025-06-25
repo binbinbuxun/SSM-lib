@@ -41,4 +41,29 @@ public class ReservationTaskService {
             }
         }
     }
+
+    /**
+     * 检查指定用户的预约到书提醒（用于登录时实时提醒）
+     */
+    public void checkReservationNotifyForUser(Integer userId) {
+        List<Reservation> all = reservationMapper.getAllWaitingReservationsByUserId(userId);
+        Map<Integer, List<Reservation>> bookResMap = new HashMap<>();
+        for (Reservation r : all) {
+            bookResMap.computeIfAbsent(r.getBookId(), k -> new ArrayList<>()).add(r);
+        }
+        for (Map.Entry<Integer, List<Reservation>> entry : bookResMap.entrySet()) {
+            Integer bookId = entry.getKey();
+            Book book = bookMapper.getBookById(bookId);
+            if (book != null && book.getStock() > 0) {
+                Reservation first = entry.getValue().get(0);
+                if (first.getUserId().equals(userId)) {
+                    String content = String.format("您预约的《%s》已到馆，请在24小时内前往借阅。", book.getName());
+                    if (!messageService.existsUnreadMessage(userId, content)) {
+                        messageService.sendMessage(userId, content, "SYSTEM");
+                    }
+                    reservationMapper.updateReservationStatus(first.getId(), "NOTIFIED");
+                }
+            }
+        }
+    }
 } 

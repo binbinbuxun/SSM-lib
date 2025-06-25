@@ -34,4 +34,70 @@
     <select id="countReadByMessageId" resultType="int">
         SELECT COUNT(*) FROM message WHERE id = #{messageId} AND read_flag = 1
     </select>
+
+    <!-- 查询当前管理员发送的管理员消息 -->
+    <select id="getSentAdminMessages" resultMap="MessageMap">
+        SELECT * FROM message WHERE from_user_id = #{fromUserId} AND type = 'ADMIN' AND user_id IS NULL ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询当前用户发送的反馈 -->
+    <select id="getSentFeedbacks" resultMap="MessageMap">
+        SELECT * FROM message WHERE from_user_id = #{fromUserId} AND type = 'USER_TO_ADMIN' ORDER BY create_time DESC
+    </select>
+
+    <!-- 消息管理多条件分页查询 -->
+    <select id="queryMessages" resultType="map">
+        SELECT 
+            m.id AS id,
+            m.user_id AS userId,
+            m.from_user_id AS fromUserId,
+            m.content AS content,
+            m.type AS type,
+            DATE_FORMAT(m.create_time, '%Y-%m-%d %H:%i:%s') AS createTime,
+            m.read_flag AS readFlag,
+            fu.username AS fromUsername,
+            tu.username AS toUsername
+        FROM message m
+        LEFT JOIN user fu ON m.from_user_id = fu.id
+        LEFT JOIN user tu ON m.user_id = tu.id
+        WHERE 1=1
+        <if test="type != null and type != ''">AND m.type = #{type}</if>
+        <if test="dateStart != null and dateStart != ''">AND m.create_time &gt;= #{dateStart}</if>
+        <if test="dateEnd != null and dateEnd != ''">AND m.create_time &lt;= #{dateEnd} 23:59:59</if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                m.content LIKE CONCAT('%', #{keyword}, '%')
+                OR fu.username LIKE CONCAT('%', #{keyword}, '%')
+                OR tu.username LIKE CONCAT('%', #{keyword}, '%')
+                OR m.user_id = #{keyword}
+                OR m.from_user_id = #{keyword}
+            )
+        </if>
+        ORDER BY m.create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+    <select id="countMessages" resultType="int">
+        SELECT COUNT(*)
+        FROM message m
+        LEFT JOIN user fu ON m.from_user_id = fu.id
+        LEFT JOIN user tu ON m.user_id = tu.id
+        WHERE 1=1
+        <if test="type != null and type != ''">AND m.type = #{type}</if>
+        <if test="dateStart != null and dateStart != ''">AND m.create_time &gt;= #{dateStart}</if>
+        <if test="dateEnd != null and dateEnd != ''">AND m.create_time &lt;= #{dateEnd} 23:59:59</if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                m.content LIKE CONCAT('%', #{keyword}, '%')
+                OR fu.username LIKE CONCAT('%', #{keyword}, '%')
+                OR tu.username LIKE CONCAT('%', #{keyword}, '%')
+                OR m.user_id = #{keyword}
+                OR m.from_user_id = #{keyword}
+            )
+        </if>
+    </select>
+
+    <select id="existsUnreadMessage" resultType="int">
+        SELECT COUNT(*) FROM message
+        WHERE user_id = #{userId} AND content = #{content} AND read_flag = 0
+    </select>
 </mapper> 

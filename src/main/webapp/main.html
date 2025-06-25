@@ -567,29 +567,56 @@
             fadeOutAndRemove('admin-feedback-popup');
         }, 10000);
     }
-    // 新增：普通用户未读消息弹窗提醒
+    // 新增：普通用户未读消息弹窗提醒（最多显示2个，以上下排列）
     function showUserMessagePopup(msgs) {
-        if (document.getElementById('user-message-popup')) return;
-        let latest = msgs[0];
-        let popup = document.createElement('div');
-        popup.id = 'user-message-popup';
-        popup.style = 'position:fixed;right:30px;bottom:30px;z-index:9999;background:#fff;border:2px solid #007aff;padding:22px 32px;box-shadow:0 2px 12px #aaa;border-radius:10px;min-width:320px;max-width:420px;font-size:16px;opacity:0;transform:translateY(30px);transition:opacity 0.5s, transform 0.5s;';
-        popup.innerHTML = `
-            <div style='font-weight:bold;margin-bottom:10px;color:#007aff;font-size:18px;'>您有新的未读消息</div>
-            <div style='margin-bottom:8px;'>${latest.content}</div>
-            <div style='text-align:right;margin-top:10px;'>
-                <button class="popup-btn" onclick="fadeOutAndRemove('user-message-popup')">关闭</button>
-                <button class="popup-btn" onclick="window.location.href='message.html'" style='margin-left:8px;'>去查看</button>
-            </div>
-        `;
-        document.body.appendChild(popup);
-        setTimeout(() => {
-            popup.style.opacity = '1';
-            popup.style.transform = 'translateY(0)';
-        }, 10);
-        setTimeout(() => {
-            fadeOutAndRemove('user-message-popup');
-        }, 10000);
+        // 只保留最多2条未读消息
+        const toShow = msgs.slice(0, 2);
+        // 先移除已存在的弹窗
+        for (let i = 0; i < 2; i++) {
+            const exist = document.getElementById('user-message-popup-' + i);
+            if (exist) exist.remove();
+        }
+        toShow.forEach((msg, idx) => {
+            let popup = document.createElement('div');
+            popup.id = 'user-message-popup-' + idx;
+            popup.style = `
+                position:fixed;
+                right:30px;
+                bottom:${30 + idx * 120}px;
+                z-index:9999;
+                background:#fff;
+                border:2px solid #007aff;
+                padding:22px 32px;
+                box-shadow:0 2px 12px #aaa;
+                border-radius:10px;
+                min-width:380px;
+                max-width:380px;
+                font-size:16px;
+                opacity:0;
+                transform:translateY(30px);
+                transition:opacity 0.5s, transform 0.5s;
+                box-sizing:border-box;
+                display:flex;
+                flex-direction:column;
+                justify-content:center;
+            `;
+            popup.innerHTML = `
+                <div style='font-weight:bold;margin-bottom:10px;color:#007aff;font-size:18px;'>您有新的未读消息</div>
+                <div style='margin-bottom:8px;word-break:break-all;'>${msg.content}</div>
+                <div style='text-align:right;margin-top:10px;'>
+                    <button class="popup-btn" onclick="fadeOutAndRemove('user-message-popup-${idx}')">关闭</button>
+                    <button class="popup-btn" onclick="window.location.href='message.html'" style='margin-left:8px;'>去查看</button>
+                </div>
+            `;
+            document.body.appendChild(popup);
+            setTimeout(() => {
+                popup.style.opacity = '1';
+                popup.style.transform = 'translateY(0)';
+            }, 10);
+            setTimeout(() => {
+                fadeOutAndRemove('user-message-popup-' + idx);
+            }, 10000);
+        });
     }
     function fadeOutAndRemove(id) {
         const el = document.getElementById(id);

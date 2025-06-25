@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>消息管理</title>
+    <title>消息管理推送</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; background-color: #f0f2f5; }
@@ -24,7 +24,7 @@
         .header-title { margin: 0 0 0 16px; font-size: 28px; font-weight: 600; letter-spacing: 1px; line-height: 1.2; }
         .user-info { display: flex; align-items: center; gap: 10px; }
         .message-center-panel {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             background: #fff;
             border-radius: 12px;
@@ -148,7 +148,7 @@
             <div class="message-center-panel">
                 <h3>发送消息</h3>
                 <div class="form-group">
-                    <label for="user-select">选择接收用户</label>
+                    <label>选择接收用户</label>
                     <div id="user-select-group" style="max-height:180px;overflow-y:auto;border:1px solid #eee;padding:10px 8px 6px 8px;border-radius:6px;background:#fafbfc;margin-bottom:12px;"></div>
                     <label style="font-size:14px;color:#888;"><input type="checkbox" id="select-all" style="margin-right:6px;">全选</label>
                 </div>
@@ -158,6 +158,29 @@
                 </div>
                 <button class="btn" id="send-btn" onclick="sendMessage()">发送</button>
                 <div class="result-msg" id="result-msg"></div>
+            </div>
+            <div class="message-center-panel" style="margin-top:36px;">
+                <h3>消息筛选与管理</h3>
+                <div class="filter-bar">
+                    <label>类型
+                        <select id="filter-type">
+                            <option value="">全部</option>
+                            <option value="SYSTEM">系统消息</option>
+                            <option value="ADMIN">管理员通知</option>
+                            <option value="USER_TO_ADMIN">用户反馈</option>
+                        </select>
+                    </label>
+                    <label>起始日期
+                        <input type="date" id="filter-date-start">
+                    </label>
+                    <label>结束日期
+                        <input type="date" id="filter-date-end">
+                    </label>
+                    <input type="text" id="filter-keyword" placeholder="内容/用户名/用户ID" style="width:180px;">
+                    <button class="btn" onclick="loadMessageList(1)">搜索</button>
+                </div>
+                <div id="message-list"></div>
+                <div class="pagination" id="pagination-bar" style="display:none;"></div>
             </div>
         </div>
     </div>
@@ -184,6 +207,7 @@ window.onload = function() {
         element.style.display = 'block';
     }
     loadUserList();
+    loadMessageList(1);
 };
 
 async function loadUserList() {
@@ -281,6 +305,53 @@ function formatDate(dateStr) {
     if (!dateStr) return '';
     const d = new Date(dateStr);
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+async function loadMessageList(pageNum = 1) {
+    const type = document.getElementById('filter-type').value;
+    const dateStart = document.getElementById('filter-date-start').value;
+    const dateEnd = document.getElementById('filter-date-end').value;
+    const keyword = document.getElementById('filter-keyword').value.trim();
+    const resp = await fetch(`/message/manage-list?pageNum=${pageNum}&pageSize=10&type=${type}&dateStart=${dateStart}&dateEnd=${dateEnd}&keyword=${encodeURIComponent(keyword)}`);
+    const data = await resp.json();
+    const list = document.getElementById('message-list');
+    list.innerHTML = '';
+    if (data.success && data.data.length > 0) {
+        data.data.forEach(msg => {
+            const div = document.createElement('div');
+            div.className = 'message-card';
+            div.innerHTML = `
+                <div class="meta">类型：${msg.type || '-'} | 发送人：${msg.fromUsername || '-'} | 接收人：${msg.toUsername || '-'} | ${formatDate(msg.createTime)}</div>
+                <div class="content">${msg.content}</div>
+                <div class="read-flag">${msg.readFlag ? '已读' : '未读'}</div>
+            `;
+            list.appendChild(div);
+        });
+        // 分页
+        renderPaginationBar(data.pageNum, data.totalPages);
+    } else {
+        list.innerHTML = '<div style="color:#888;text-align:center;padding:40px 0;">暂无消息</div>';
+        document.getElementById('pagination-bar').style.display = 'none';
+    }
+}
+function renderPaginationBar(pageNum, totalPages) {
+    const bar = document.getElementById('pagination-bar');
+    bar.innerHTML = '';
+    if (totalPages <= 1) { bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+    const prev = document.createElement('button');
+    prev.textContent = '上一页';
+    prev.disabled = pageNum === 1;
+    prev.onclick = () => loadMessageList(pageNum - 1);
+    bar.appendChild(prev);
+    const info = document.createElement('span');
+    info.textContent = `第${pageNum}页 / 共${totalPages}页`;
+    bar.appendChild(info);
+    const next = document.createElement('button');
+    next.textContent = '下一页';
+    next.disabled = pageNum === totalPages;
+    next.onclick = () => loadMessageList(pageNum + 1);
+    bar.appendChild(next);
 }
 </script>
 </body>

@@ -14,4 +14,5 @@ public interface ReservationMapper {
     List<Reservation> getAllWaitingReservations();
     // 更新预约状态
     int updateReservationStatus(@Param("id") Integer id, @Param("status") String status);
+    List<Reservation> getAllWaitingReservationsByUserId(Integer userId);
 } 

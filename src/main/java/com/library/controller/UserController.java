@@ -4,6 +4,7 @@ import com.library.annotation.RequireAdmin;
 import com.library.entity.User;
 import com.library.service.UserService;
 import com.library.service.BorrowRecordService;
+import com.library.service.impl.ReservationTaskService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,9 @@ public class UserController {
 
     @Autowired
     private BorrowRecordService borrowRecordService;
+
+    @Autowired
+    private ReservationTaskService reservationTaskService;
 
     @RequireAdmin
     @GetMapping("/list")
@@ -81,6 +85,7 @@ public class UserController {
         if (loginUser != null) {
             session.setAttribute("user", loginUser);
             borrowRecordService.checkDueRemindersForUser(loginUser.getId());
+            reservationTaskService.checkReservationNotifyForUser(loginUser.getId());
             result.put("success", true);
             result.put("data", loginUser);
             result.put("role", loginUser.getRole());
@@ -187,6 +192,15 @@ public class UserController {
         List<Map<String, Object>> rankList = userService.getUserBorrowRank(5);
         result.put("success", true);
         result.put("data", rankList);
+        return result;
+    }
+
+    @GetMapping("/count")
+    public Map<String, Object> getUserCount() {
+        Map<String, Object> result = new HashMap<>();
+        int count = userService.getAllUsers().size();
+        result.put("success", true);
+        result.put("data", count);
         return result;
     }
 }

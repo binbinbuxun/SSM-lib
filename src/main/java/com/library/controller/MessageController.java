@@ -57,11 +57,19 @@ public class MessageController {
     @PostMapping("/send")
     public Map<String, Object> sendMessage(@RequestBody Map<String, Object> payload, HttpSession session) {
         Map<String, Object> result = new HashMap<>();
-        // 这里可加管理员权限校验
+        Object userObj = session.getAttribute("user");
+        Integer fromUserId = null;
+        if (userObj != null) {
+            com.library.entity.User user = (com.library.entity.User) userObj;
+            // 只有管理员发送时写入fromUserId
+            if ("ADMIN".equals(user.getRole())) {
+                fromUserId = user.getId();
+            }
+        }
         Integer userId = (Integer) payload.get("userId");
         String content = (String) payload.get("content");
         String type = (String) payload.getOrDefault("type", "SYSTEM");
-        boolean success = messageService.sendMessage(userId, content, type);
+        boolean success = messageService.sendMessage(userId, content, type, fromUserId);
         result.put("success", success);
         result.put("msg", success ? "发送成功" : "发送失败");
         return result;
@@ -72,15 +80,25 @@ public class MessageController {
      */
     @RequireAdmin
     @PostMapping("/sendToAll")
-    public Map<String, Object> sendMessageToAll(@RequestBody Map<String, Object> payload) {
+    public Map<String, Object> sendMessageToAll(@RequestBody Map<String, Object> payload, HttpSession session) {
         Map<String, Object> result = new HashMap<>();
+        Object userObj = session.getAttribute("user");
+        Integer fromUserId = null;
+        if (userObj != null) {
+            com.library.entity.User user = (com.library.entity.User) userObj;
+            if ("ADMIN".equals(user.getRole())) {
+                fromUserId = user.getId();
+            }
+        }
         String content = (String) payload.get("content");
-        String type = (String) payload.getOrDefault("type", "SYSTEM");
+        String type = (String) payload.getOrDefault("type", "ADMIN");
         int successCount = 0;
         int failCount = 0;
+        // 先插入一条主消息（user_id为null）
+        messageService.sendMessage(null, content, type, fromUserId);
         List<com.library.entity.User> users = userService.getAllUsers();
         for (com.library.entity.User user : users) {
-            boolean success = messageService.sendMessage(user.getId(), content, type);
+            boolean success = messageService.sendMessage(user.getId(), content, type, fromUserId);
             if (success) successCount++;
             else failCount++;
         }
@@ -94,8 +112,16 @@ public class MessageController {
      */
     @RequireAdmin
     @PostMapping("/sendToUsers")
-    public Map<String, Object> sendMessageToUsers(@RequestBody Map<String, Object> payload) {
+    public Map<String, Object> sendMessageToUsers(@RequestBody Map<String, Object> payload, HttpSession session) {
         Map<String, Object> result = new HashMap<>();
+        Object userObj = session.getAttribute("user");
+        Integer fromUserId = null;
+        if (userObj != null) {
+            com.library.entity.User user = (com.library.entity.User) userObj;
+            if ("ADMIN".equals(user.getRole())) {
+                fromUserId = user.getId();
+            }
+        }
         Object userIdsObj = payload.get("userIds");
         String content = (String) payload.get("content");
         String type = (String) payload.getOrDefault("type", "SYSTEM");
@@ -107,7 +133,7 @@ public class MessageController {
                 Integer userId = null;
                 try { userId = Integer.parseInt(idObj.toString()); } catch (Exception ignore) {}
                 if (userId != null) {
-                    boolean success = messageService.sendMessage(userId, content, type);
+                    boolean success = messageService.sendMessage(userId, content, type, fromUserId);
                     if (success) successCount++;
                     else failCount++;
                 }
@@ -153,6 +179,71 @@ public class MessageController {
             result.put("success", false);
             result.put("msg", "查询失败");
         }
+        return result;
+    }
+
+    /**
+     * 管理员：获取自己发送的管理员消息
+     */
+    @GetMapping("/sent-admin")
+    public Map<String, Object> getSentAdminMessages(HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        Object userObj = session.getAttribute("user");
+        if (userObj == null) {
+            result.put("success", false);
+            result.put("msg", "请先登录");
+            return result;
+        }
+        com.library.entity.User user = (com.library.entity.User) userObj;
+        if (!"ADMIN".equals(user.getRole())) {
+            result.put("success", false);
+            result.put("msg", "无权限");
+            return result;
+        }
+        result.put("success", true);
+        result.put("data", messageService.getSentAdminMessages(user.getId()));
+        return result;
+    }
+
+    /**
+     * 普通用户：获取自己发送的反馈
+     */
+    @GetMapping("/sent-feedback")
+    public Map<String, Object> getSentFeedback(HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        Object userObj = session.getAttribute("user");
+        if (userObj == null) {
+            result.put("success", false);
+            result.put("msg", "请先登录");
+            return result;
+        }
+        com.library.entity.User user = (com.library.entity.User) userObj;
+        // 只查type=USER_TO_ADMIN，fromUserId=当前用户id
+        List<Message> feedbacks = messageService.getSentFeedbacks(user.getId());
+        result.put("success", true);
+        result.put("data", feedbacks);
+        return result;
+    }
+
+    /**
+     * 消息管理：多条件分页查询
+     */
+    @RequireAdmin
+    @GetMapping("/manage-list")
+    public Map<String, Object> getManageMessageList(
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String dateStart,
+            @RequestParam(required = false) String dateEnd,
+            @RequestParam(required = false) String keyword) {
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> list = messageService.queryMessages(pageNum, pageSize, type, dateStart, dateEnd, keyword);
+        int total = messageService.countMessages(type, dateStart, dateEnd, keyword);
+        result.put("success", true);
+        result.put("data", list);
+        result.put("pageNum", pageNum);
+        result.put("totalPages", (int)Math.ceil(total / (pageSize * 1.0)));
         return result;
     }
 } 

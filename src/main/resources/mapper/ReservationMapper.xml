@@ -38,4 +38,9 @@
     <update id="updateReservationStatus">
         UPDATE reservation SET status = #{status} WHERE id = #{id}
     </update>
+
+    <!-- 查询指定用户所有等待中的预约 -->
+    <select id="getAllWaitingReservationsByUserId" resultMap="ReservationMap">
+        SELECT * FROM reservation WHERE user_id = #{userId} AND status = 'WAITING' ORDER BY create_time ASC
+    </select>
 </mapper> 

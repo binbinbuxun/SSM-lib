@@ -167,7 +167,7 @@ public class BorrowRecordServiceImpl implements BorrowRecordService {
     }
 
     /**
-     * 用户行为触发：检查当前用户的借阅到期提醒（7天/3天）
+     * 用户行为触发：检查当前用户的借阅到期提醒（<=7天、<=3天各提醒一次）
      */
     public void checkDueRemindersForUser(Integer userId) {
         List<BorrowRecord> currentBorrows = borrowRecordMapper.getCurrentBorrowRecordsByUserId(userId);
@@ -175,10 +175,31 @@ public class BorrowRecordServiceImpl implements BorrowRecordService {
         for (BorrowRecord record : currentBorrows) {
             if (record.getDueDate() == null) continue;
             long days = (record.getDueDate().getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-            if ((days == 7 || days == 3)) {
-                // 可选：防止重复推送（如消息表已存在该提醒）
-                String content = String.format("您借阅的《%s》还有%d天到期，请及时归还。", record.getBookName(), days);
-                messageService.sendMessage(record.getUserId(), content, "SYSTEM");
+            // 查询该用户该书的未读提醒消息，防止重复推送
+            boolean has7 = false, has3 = false, hasOverdue = false;
+            List<com.library.entity.Message> msgs = messageService.getMessagesByUserId(userId);
+            for (com.library.entity.Message msg : msgs) {
+                if (msg.getType() != null && msg.getType().equals("SYSTEM") && msg.getContent() != null && msg.getContent().contains(record.getBookName())) {
+                    if (msg.getContent().contains("7天") && !msg.getReadFlag().equals(0)) has7 = true;
+                    if (msg.getContent().contains("3天") && !msg.getReadFlag().equals(0)) has3 = true;
+                    if (msg.getContent().contains("逾期") && !msg.getReadFlag().equals(0)) hasOverdue = true;
+                }
+            }
+            if (days <= 7 && days > 3 && !has7) {
+                String content = String.format("您借阅的《%s》还有7天到期，请及时归还。", record.getBookName());
+                if (!messageService.existsUnreadMessage(record.getUserId(), content)) {
+                    messageService.sendMessage(record.getUserId(), content, "SYSTEM");
+                }
+            } else if (days <= 3 && days >= 0 && !has3) {
+                String content = String.format("您借阅的《%s》还有3天到期，请及时归还。", record.getBookName());
+                if (!messageService.existsUnreadMessage(record.getUserId(), content)) {
+                    messageService.sendMessage(record.getUserId(), content, "SYSTEM");
+                }
+            } else if (days < 0 && !hasOverdue) {
+                String content = String.format("您借阅的《%s》已逾期，请尽快归还！", record.getBookName());
+                if (!messageService.existsUnreadMessage(record.getUserId(), content)) {
+                    messageService.sendMessage(record.getUserId(), content, "SYSTEM");
+                }
             }
         }
     }
